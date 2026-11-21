@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Third-party pdf.js worker, copied in by "postinstall" (minified, not our code).
+    "public/pdf.worker.min.mjs",
+    // Local npm cache folder (see .npmrc); never part of the project.
+    ".npm-cache/**",
   ]),
 ]);
 
