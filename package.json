@@ -1,0 +1,42 @@
+{
+  "name": "resume-builder",
+  "version": "0.1.0",
+  "description": "Build a resume in your browser and download it as a text-based PDF. Templates, rich text, live preview; everything stays on your device.",
+  "license": "MIT",
+  "author": "Sanjay Y M",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "build:pages": "STATIC_EXPORT=1 PAGES_BASE_PATH=/resume-builder next build",
+    "start": "next start",
+    "lint": "eslint",
+    "pdf:sample": "esbuild scripts/render-sample.mts --bundle --platform=node --format=esm --packages=external --jsx=automatic --alias:@=./src --outfile=.next/render-sample.mjs --log-level=warning && node .next/render-sample.mjs",
+    "postinstall": "node -e \"require('fs').copyFileSync('node_modules/pdfjs-dist/build/pdf.worker.min.mjs','public/pdf.worker.min.mjs')\""
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^7.0.8",
+    "@react-pdf/renderer": "^4.9.0",
+    "@tiptap/extension-text-align": "^3.35.0",
+    "@tiptap/pm": "^3.35.0",
+    "@tiptap/react": "^3.35.0",
+    "@tiptap/starter-kit": "^3.35.0",
+    "next": "16.4.6",
+    "pdfjs-dist": "^6.5.438",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-hook-form": "^7.92.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "4.3.3",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "esbuild": "^0.28.2",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.6",
+    "tailwindcss": "4.3.3",
+    "typescript": "^5"
+  }
+}
