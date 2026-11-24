@@ -2,6 +2,8 @@
 
 Thanks for your interest in improving Resume Builder!
 
+Everyone taking part is expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md). To report a security problem, please follow [SECURITY.md](SECURITY.md) instead of opening a public issue.
+
 ## Reporting a bug or suggesting a feature
 
 Open an issue and include:

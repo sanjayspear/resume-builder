@@ -152,8 +152,17 @@ Spell check: [nspell](https://github.com/wooorm/nspell) (MIT) with the Hunspell 
 
 ## Contributing
 
-Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md). Found a security problem? Please report it privately, as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
-[MIT](LICENSE) © 2026 Sanjay Y M
+Resume Builder is open source under the [MIT License](LICENSE) © 2026 Sanjay Y M.
+
+It includes third-party files under their own licences:
+
+| What | Licence | Licence text |
+| --- | --- | --- |
+| Fonts in `public/fonts/` (Source Sans 3, Inter, Roboto, Gelasio, Carlito, Montserrat) | SIL Open Font License 1.1 | [`public/fonts/OFL.txt`](public/fonts/OFL.txt) |
+| English spelling dictionaries (Hunspell, from SCOWL), copied into `public/dictionaries/` by `npm install` | MIT and BSD-style | `public/dictionaries/*.LICENSE.txt` (copied with them) |
+| pdf.js worker, copied into `public/` by `npm install` | Apache 2.0 | Notice included at the top of the file |
+| npm packages (Next.js, React, react-pdf, Tiptap, nspell…) | Their own open-source licences | In each package under `node_modules/` |
