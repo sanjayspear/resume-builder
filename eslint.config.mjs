@@ -16,6 +16,9 @@ const eslintConfig = defineConfig([
     "public/pdf.worker.min.mjs",
     // Local npm cache folder (see .npmrc); never part of the project.
     ".npm-cache/**",
+    // Playwright output (HTML report and traces contain bundled third-party JS).
+    "playwright-report/**",
+    "test-results/**",
   ]),
 ]);
 

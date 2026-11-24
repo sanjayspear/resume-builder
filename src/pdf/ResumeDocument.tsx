@@ -1,12 +1,32 @@
 import { Document, Image, Link, Page, Polygon, StyleSheet, Svg, Text, View } from "@react-pdf/renderer";
-import { createContext, Fragment, useContext, type ComponentProps } from "react";
+import { createContext, useContext, type ComponentProps } from "react";
 import { sortExperience } from "@/lib/experienceSort";
 import { languageLevelInfo } from "@/lib/languages";
 import { templateInfo } from "@/lib/templates";
-import { flattenDoc, type RichInline, type RichUnit } from "@/lib/richText";
-import type { Experience, Language, ResumeData, SkillGroup } from "@/lib/schema";
+import { flattenDoc, type RichUnit } from "@/lib/richText";
+import {
+  isBlankExperience,
+  isBlankSkillGroup,
+  type Certification,
+  type Experience,
+  type Language,
+  type Project,
+  type ResumeData,
+  type SkillGroup,
+} from "@/lib/schema";
 import { DEFAULT_FONT_SIZE, normalizeStyle, tint } from "@/lib/theme";
-import { GlobeIcon, MailIcon, PhoneIcon, PinIcon } from "./icons";
+import { GlobeIcon, LinkedInIcon, MailIcon, PhoneIcon, PinIcon } from "./icons";
+import { ModernAtsDocument } from "./ModernAtsDocument";
+import { PLACEHOLDER } from "./placeholders";
+import { clean, displayUrl, documentInfo, Inlines, NO_LIGATURES, nonEmpty, webHref } from "./shared";
+
+/*
+ * The PDF for a resume. Classic Sidebar is drawn in this file; Modern ATS
+ * lives in ModernAtsDocument.tsx. Both read the same ResumeData.
+ *
+ * `placeholders`: draw grey hint text (placeholders.ts) where fields are
+ * empty. Only the on-screen preview turns this on; downloads never do.
+ */
 
 /* ---------- Fixed design tokens (from the original design reference) ---------- */
 
@@ -42,6 +62,7 @@ function makeTheme(style: ResumeData["style"] | undefined) {
   const s = StyleSheet.create({
     page: {
       fontFamily,
+      fontFeatureSettings: NO_LIGATURES,
       fontSize,
       lineHeight,
       color: INK,
@@ -134,39 +155,6 @@ function makeTheme(style: ResumeData["style"] | undefined) {
 
     sideSummary: { marginTop: 4 },
     sideSummaryText: { paddingHorizontal: SIDE_PAD_X, fontSize },
-
-    /* ----- Minimal (one column, ATS-first) layout ----- */
-    mPage: {
-      fontFamily,
-      fontSize,
-      lineHeight,
-      color: INK,
-      paddingTop: 40,
-      paddingBottom: 40,
-      paddingHorizontal: 44,
-    },
-    mHeader: { marginBottom: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "#E5E7EB" },
-    mName: { fontSize: size(24), fontWeight: 700, lineHeight: 1.15, color: accentColor },
-    mTitle: { fontSize: size(12), lineHeight: 1.3, marginTop: 2 },
-    mContact: { marginTop: 6, color: MUTED },
-    mContactLink: { color: MUTED, textDecoration: "none" },
-    mSection: { marginBottom: 12 },
-    mHeading: {
-      fontSize: size(10.5),
-      fontWeight: 700,
-      textTransform: "uppercase",
-      letterSpacing: 0.8,
-      color: accentColor,
-      paddingBottom: 3,
-      marginBottom: 6,
-      borderBottomWidth: 0.75,
-      borderBottomColor: "#E5E7EB",
-    },
-    mEntry: { marginBottom: 10 },
-    mEntryHead: { flexDirection: "row", alignItems: "center", marginBottom: 2 },
-    mEntryHeadText: { flex: 1 },
-    mDates: { color: MUTED, fontSize: size(8.3), marginLeft: 8, textAlign: "right" },
-    mLine: { marginBottom: 2 },
   });
 
   return { s, size, accentColor, accentFaded };
@@ -177,10 +165,6 @@ const ThemeContext = createContext<Theme>(makeTheme(undefined));
 const useTheme = () => useContext(ThemeContext);
 
 /* ---------- Small helpers ---------- */
-
-const clean = (value: string | undefined | null) => (value ?? "").trim();
-const nonEmpty = (list: { value?: string }[] | undefined) =>
-  (list ?? []).map((item) => clean(item?.value)).filter(Boolean);
 
 /** Downward-pointing triangle used for the little "notch" details. */
 function Notch({ color, style }: { color: string; style: ComponentProps<typeof Svg>["style"] }) {
@@ -205,27 +189,6 @@ function Bullet({ text, size }: { text: string; size?: number }) {
 }
 
 /* ---------- Formatted text (bold / italic / underline / lists / alignment) ---------- */
-
-/** Text runs with their bold/italic/underline marks, as nested <Text>. */
-function Inlines({ inlines }: { inlines: RichInline[] }) {
-  return (
-    <>
-      {inlines.map((node, i) => {
-        if (node.type === "hardBreak") return "\n";
-        const marks = new Set((node.marks ?? []).map((m) => m.type));
-        const style: { fontWeight?: number; fontStyle?: "italic"; textDecoration?: "underline" } = {};
-        if (marks.has("bold")) style.fontWeight = 700;
-        if (marks.has("italic")) style.fontStyle = "italic";
-        if (marks.has("underline")) style.textDecoration = "underline";
-        return (
-          <Text key={i} style={style}>
-            {node.text}
-          </Text>
-        );
-      })}
-    </>
-  );
-}
 
 /** One paragraph or one bullet of formatted text. */
 function RichUnitView({ unit }: { unit: RichUnit }) {
@@ -323,7 +286,11 @@ function ExperienceEntry({ job }: { job: Experience }) {
             {job.logo ? <Image src={job.logo} style={s.logo} /> : null}
             <View style={s.entryHeadingText}>
               {clean(job.jobTitle) && <Text style={s.entryTitle}>{clean(job.jobTitle)}</Text>}
-              {clean(job.company) && <Text style={s.entryCompany}>{clean(job.company)}</Text>}
+              {clean(job.company) && (
+                <Text style={s.entryCompany}>
+                  {[clean(job.company), clean(job.location)].filter(Boolean).join(", ")}
+                </Text>
+              )}
             </View>
           </View>
           {first && <RichUnitView unit={first} />}
@@ -341,14 +308,88 @@ function ExperienceEntry({ job }: { job: Experience }) {
   );
 }
 
-function Contacts({ personal }: { personal: ResumeData["personal"] }) {
+/** A project: name (and link), then its description. Only shown when projects exist. */
+function ProjectEntry({ project }: { project: Project }) {
+  const { s } = useTheme();
+  const [first, ...rest] = flattenDoc(project.description);
+  const link = clean(project.link);
+  return (
+    <View style={s.entry}>
+      <View style={s.entryRow} wrap={false}>
+        <View style={{ width: DATE_COL }} />
+        <View style={s.entryBody}>
+          <Text style={s.entryCompany}>
+            <Text style={s.entryTitle}>{clean(project.name)}</Text>
+            {link ? "   " : ""}
+            {link ? (
+              <Link src={webHref(link)} style={s.contactLink}>
+                {displayUrl(link)}
+              </Link>
+            ) : null}
+          </Text>
+          {first && <RichUnitView unit={first} />}
+        </View>
+      </View>
+      {rest.map((unit, i) => (
+        <View key={i} style={s.entryRow}>
+          <View style={{ width: DATE_COL }} />
+          <View style={s.entryBody}>
+            <RichUnitView unit={unit} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** A certification, laid out like an education entry (year on the left). */
+function CertificationEntry({ item }: { item: Certification }) {
+  const { s } = useTheme();
+  return (
+    <View style={[s.entryRow, { marginBottom: 8 }]} wrap={false}>
+      <Text style={s.dateCol}>{clean(item.year)}</Text>
+      <View style={s.entryBody}>
+        <Text style={s.entryTitle}>{clean(item.name)}</Text>
+        {clean(item.issuer) && <Text>{clean(item.issuer)}</Text>}
+      </View>
+    </View>
+  );
+}
+
+function Contacts({ personal, placeholders }: { personal: ResumeData["personal"]; placeholders: boolean }) {
   const { s } = useTheme();
   const location = clean(personal?.location);
   const phone = clean(personal?.phone);
   const email = clean(personal?.email);
   const website = clean(personal?.website);
   const websiteHref = /^https?:\/\//i.test(website) ? website : `https://${website}`;
-  if (!location && !phone && !email && !website) return null;
+  const linkedin = clean(personal?.linkedin);
+  if (!location && !phone && !email && !website && !linkedin) {
+    if (!placeholders) return null;
+    const hint = [s.contactText, { color: PLACEHOLDER.color }];
+    return (
+      <View style={s.contactList}>
+        <View style={s.contactRow}>
+          <View style={s.contactIcon}>
+            <PinIcon background={SIDEBAR_BG} />
+          </View>
+          <Text style={hint}>{PLACEHOLDER.location}</Text>
+        </View>
+        <View style={s.contactRow}>
+          <View style={s.contactIcon}>
+            <PhoneIcon />
+          </View>
+          <Text style={hint}>{PLACEHOLDER.phone}</Text>
+        </View>
+        <View style={s.contactRow}>
+          <View style={s.contactIcon}>
+            <MailIcon />
+          </View>
+          <Text style={hint}>{PLACEHOLDER.email}</Text>
+        </View>
+      </View>
+    );
+  }
   return (
     <View style={s.contactList}>
       {location && (
@@ -389,6 +430,16 @@ function Contacts({ personal }: { personal: ResumeData["personal"] }) {
           </Link>
         </View>
       )}
+      {linkedin && (
+        <View style={s.contactRow}>
+          <View style={s.contactIcon}>
+            <LinkedInIcon background={SIDEBAR_BG} />
+          </View>
+          <Link src={webHref(linkedin)} style={[s.contactText, s.contactLink]}>
+            {displayUrl(linkedin)}
+          </Link>
+        </View>
+      )}
     </View>
   );
 }
@@ -424,187 +475,44 @@ function LanguageBlock({ language }: { language: Language }) {
   );
 }
 
-/* ---------- Minimal (one column, ATS-first) ---------- */
-
-function MinimalHeading({ children }: { children: string }) {
-  const { s } = useTheme();
-  return (
-    <Text style={s.mHeading} minPresenceAhead={40}>
-      {children}
-    </Text>
-  );
-}
-
-function MinimalExperience({ job }: { job: Experience }) {
-  const { s } = useTheme();
-  const [first, ...rest] = flattenDoc(job.description);
-  const start = clean(job.startDate);
-  const end = job.isCurrent ? "Present" : clean(job.endDate);
-  const dates = [start, end].filter(Boolean).join(" - ");
-  const company = clean(job.company);
-  return (
-    <View style={s.mEntry}>
-      {/* Title line + first line of the description stay together on one page. */}
-      <View wrap={false}>
-        <View style={s.mEntryHead}>
-          {/* eslint-disable-next-line jsx-a11y/alt-text -- react-pdf's <Image> is not an HTML <img> and has no alt prop */}
-          {job.logo ? <Image src={job.logo} style={s.logo} /> : null}
-          <Text style={s.mEntryHeadText}>
-            <Text style={s.entryTitle}>{clean(job.jobTitle)}</Text>
-            {company ? `, ${company}` : ""}
-          </Text>
-          {dates ? <Text style={s.mDates}>{dates}</Text> : null}
-        </View>
-        {first && <RichUnitView unit={first} />}
-      </View>
-      {rest.map((unit, i) => (
-        <RichUnitView key={i} unit={unit} />
-      ))}
-    </View>
-  );
-}
-
-function MinimalPage({ data }: { data: ResumeData }) {
-  const { s } = useTheme();
-  const personal = data.personal ?? ({} as ResumeData["personal"]);
-  const summary = flattenDoc(data.summary);
-  const experience = sortExperience((data.experience ?? []).filter(Boolean), data.experienceOrder ?? "newest");
-  const education = (data.education ?? []).filter((e) => e && (clean(e.degree) || clean(e.institution) || clean(e.year)));
-  const skillGroups = (data.skillGroups ?? []).filter((g) => g && (clean(g.name) || nonEmpty(g.skills).length));
-  const languages = (data.languages ?? []).filter((l) => l && clean(l.name));
-  const highlights = clean(data.sidebarSummary);
-
-  const email = clean(personal.email);
-  const website = clean(personal.website);
-  const contact: { text: string; href?: string }[] = [
-    { text: clean(personal.location) },
-    { text: clean(personal.phone) },
-    { text: email, href: email ? `mailto:${email}` : undefined },
-    {
-      text: website.replace(/^https?:\/\//i, ""),
-      href: website ? (/^https?:\/\//i.test(website) ? website : `https://${website}`) : undefined,
-    },
-  ].filter((c) => c.text);
-
-  return (
-    <Page size="A4" style={s.mPage}>
-      <View style={s.mHeader}>
-        <Text style={s.mName}>{clean(personal.fullName) || "Your Name"}</Text>
-        {clean(personal.jobTitle) ? <Text style={s.mTitle}>{clean(personal.jobTitle)}</Text> : null}
-        {contact.length > 0 && (
-          // One <Text> for the whole line, so the spaces around "|" are kept.
-          <Text style={s.mContact}>
-            {contact.map((c, i) => (
-              <Fragment key={i}>
-                {i > 0 ? "   |   " : ""}
-                {c.href ? (
-                  <Link src={c.href} style={s.mContactLink}>
-                    {c.text}
-                  </Link>
-                ) : (
-                  c.text
-                )}
-              </Fragment>
-            ))}
-          </Text>
-        )}
-      </View>
-
-      {summary.length > 0 && (
-        <View style={s.mSection}>
-          <MinimalHeading>Summary</MinimalHeading>
-          {summary.map((unit, i) => (
-            <RichUnitView key={i} unit={unit} />
-          ))}
-        </View>
-      )}
-
-      {highlights ? (
-        <View style={s.mSection} wrap={false}>
-          <MinimalHeading>Highlights</MinimalHeading>
-          <Text>{highlights}</Text>
-        </View>
-      ) : null}
-
-      {experience.length > 0 && (
-        <View style={s.mSection}>
-          <MinimalHeading>Work Experience</MinimalHeading>
-          {experience.map((job, i) => (
-            <MinimalExperience key={i} job={job} />
-          ))}
-        </View>
-      )}
-
-      {education.length > 0 && (
-        <View style={s.mSection}>
-          <MinimalHeading>Education</MinimalHeading>
-          {education.map((item, i) => (
-            <View key={i} style={[s.mEntryHead, { alignItems: "flex-start", marginBottom: 4 }]} wrap={false}>
-              <View style={s.mEntryHeadText}>
-                {clean(item.degree) ? <Text style={s.entryTitle}>{clean(item.degree)}</Text> : null}
-                {clean(item.institution) ? <Text>{clean(item.institution)}</Text> : null}
-              </View>
-              {clean(item.year) ? <Text style={s.mDates}>{clean(item.year)}</Text> : null}
-            </View>
-          ))}
-        </View>
-      )}
-
-      {skillGroups.length > 0 && (
-        <View style={s.mSection}>
-          <MinimalHeading>Skills</MinimalHeading>
-          {skillGroups.map((group, i) => {
-            const skills = nonEmpty(group.skills);
-            return (
-              <Text key={i} style={s.mLine}>
-                {clean(group.name) ? <Text style={s.entryTitle}>{clean(group.name)}{skills.length ? ": " : ""}</Text> : null}
-                {skills.join(", ")}
-              </Text>
-            );
-          })}
-        </View>
-      )}
-
-      {languages.length > 0 && (
-        <View style={s.mSection} wrap={false}>
-          <MinimalHeading>Languages</MinimalHeading>
-          <Text>{languages.map((l) => `${clean(l.name)} (${languageLevelInfo(l.level).label})`).join(", ")}</Text>
-        </View>
-      )}
-    </Page>
-  );
-}
-
 /* ---------- The document ---------- */
 
-export function ResumeDocument({ data }: { data: ResumeData }) {
+export function ResumeDocument({ data, placeholders = false }: { data: ResumeData; placeholders?: boolean }) {
+  if (templateInfo(data.style?.template).layout === "ats") {
+    return <ModernAtsDocument data={data} placeholders={placeholders} />;
+  }
+  return <ClassicSidebarDocument data={data} placeholders={placeholders} />;
+}
+
+/* ---------- Classic Sidebar ---------- */
+
+function ClassicSidebarDocument({ data, placeholders }: { data: ResumeData; placeholders: boolean }) {
   const theme = makeTheme(data.style);
   const { s } = theme;
   const personal = data.personal ?? ({} as ResumeData["personal"]);
   const fullName = clean(personal.fullName);
   // Always in date order, whatever order the form currently shows.
-  const experience = sortExperience((data.experience ?? []).filter(Boolean), data.experienceOrder ?? "newest");
+  // Completely empty entries (e.g. left by "Clear form") are skipped.
+  const experience = sortExperience(
+    (data.experience ?? []).filter((job) => job && !isBlankExperience(job)),
+    data.experienceOrder ?? "newest",
+  );
   const languages = (data.languages ?? []).filter((l) => l && clean(l.name));
   const education = (data.education ?? []).filter(
     (e) => e && (clean(e.degree) || clean(e.institution) || clean(e.year)),
   );
-  const skillGroups = (data.skillGroups ?? []).filter(Boolean);
+  const skillGroups = (data.skillGroups ?? []).filter((group) => group && !isBlankSkillGroup(group));
   const summary = flattenDoc(data.summary);
+  const hasSummary = summary.some((u) => u.inlines.some((i) => i.type === "text" && i.text.trim() !== ""));
+  const hint = { color: PLACEHOLDER.color };
   const sidebarSummary = clean(data.sidebarSummary);
-  const isMinimal = templateInfo(data.style?.template).layout === "minimal";
+  // Optional sections: only drawn when they have content.
+  const projects = (data.projects ?? []).filter((p) => p && clean(p.name));
+  const certifications = (data.certifications ?? []).filter((c) => c && clean(c.name));
 
   return (
     <ThemeContext.Provider value={theme}>
-      <Document
-        title={fullName ? `${fullName} - Resume` : "Resume"}
-        author={fullName || undefined}
-        subject={clean(personal.jobTitle) || undefined}
-        creator="Resume Builder"
-        producer="Resume Builder"
-      >
-        {isMinimal ? (
-          <MinimalPage data={data} />
-        ) : (
+      <Document {...documentInfo(personal)}>
         <Page size="A4" style={s.page}>
           <View style={s.sidebarBackground} fixed />
 
@@ -612,38 +520,79 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
           <View style={s.header}>
             <View style={s.nameRow}>
               <View style={s.nameBox}>
-                <Text style={s.name}>{fullName || "Your Name"}</Text>
+                {fullName ? (
+                  <Text style={s.name}>{fullName}</Text>
+                ) : (
+                  <Text style={[s.name, placeholders ? hint : {}]}>{placeholders ? PLACEHOLDER.name : " "}</Text>
+                )}
               </View>
               <View style={s.accentBlock} />
             </View>
             <View style={s.strip}>
               <Notch color="#FFFFFF" style={s.stripNotch} />
-              <Text style={s.jobTitle}>{clean(personal.jobTitle) || " "}</Text>
+              {clean(personal.jobTitle) || !placeholders ? (
+                <Text style={s.jobTitle}>{clean(personal.jobTitle) || " "}</Text>
+              ) : (
+                <Text style={[s.jobTitle, hint]}>{PLACEHOLDER.jobTitle}</Text>
+              )}
             </View>
           </View>
 
           <View style={s.body}>
             {/* Left / main column */}
             <View style={s.main}>
-              {summary.length > 0 && (
+              {hasSummary ? (
                 <View style={s.section}>
                   <SectionHeading>Summary</SectionHeading>
                   {summary.map((unit, i) => (
                     <RichUnitView key={i} unit={unit} />
                   ))}
                 </View>
+              ) : (
+                placeholders && (
+                  <View style={s.section}>
+                    <SectionHeading>Summary</SectionHeading>
+                    <Text style={[s.richParagraph, hint]}>{PLACEHOLDER.summary}</Text>
+                  </View>
+                )
               )}
 
-              {experience.length > 0 && (
+              {experience.length > 0 ? (
                 <View style={s.section}>
                   <SectionHeading>Work Experience</SectionHeading>
                   {experience.map((job, i) => (
                     <ExperienceEntry key={i} job={job} />
                   ))}
                 </View>
+              ) : (
+                placeholders && (
+                  <View style={s.section}>
+                    <SectionHeading>Work Experience</SectionHeading>
+                    <View style={s.entryRow}>
+                      <Text style={[s.dateCol, hint]}>{PLACEHOLDER.dates}</Text>
+                      <View style={s.entryBody}>
+                        <Text style={[s.entryTitle, hint]}>{PLACEHOLDER.experienceTitle}</Text>
+                        <Text style={[s.entryCompany, hint]}>{PLACEHOLDER.company}</Text>
+                        <View style={s.bullet}>
+                          <Text style={[s.bulletDot, hint]}>•</Text>
+                          <Text style={[s.richText, hint]}>{PLACEHOLDER.bullet}</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                )
               )}
 
-              {education.length > 0 && (
+              {projects.length > 0 && (
+                <View style={s.section}>
+                  <SectionHeading>Projects</SectionHeading>
+                  {projects.map((project, i) => (
+                    <ProjectEntry key={i} project={project} />
+                  ))}
+                </View>
+              )}
+
+              {education.length > 0 ? (
                 <View style={s.section}>
                   <SectionHeading>Education</SectionHeading>
                   {education.map((item, i) => (
@@ -656,20 +605,52 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
                     </View>
                   ))}
                 </View>
+              ) : (
+                placeholders && (
+                  <View style={s.section}>
+                    <SectionHeading>Education</SectionHeading>
+                    <View style={s.entryRow}>
+                      <Text style={[s.dateCol, hint]}>{PLACEHOLDER.year}</Text>
+                      <View style={s.entryBody}>
+                        <Text style={[s.entryTitle, hint]}>{PLACEHOLDER.degree}</Text>
+                        <Text style={hint}>{PLACEHOLDER.institution}</Text>
+                      </View>
+                    </View>
+                  </View>
+                )
+              )}
+
+              {certifications.length > 0 && (
+                <View style={s.section}>
+                  <SectionHeading>Certifications</SectionHeading>
+                  {certifications.map((item, i) => (
+                    <CertificationEntry key={i} item={item} />
+                  ))}
+                </View>
               )}
             </View>
 
             {/* Right sidebar */}
             <View style={s.sidebar}>
-              <Contacts personal={personal} />
+              <Contacts personal={personal} placeholders={placeholders} />
 
-              {skillGroups.length > 0 && (
+              {skillGroups.length > 0 ? (
                 <View>
                   <SidebarHeading>Skills</SidebarHeading>
                   {skillGroups.map((group, i) => (
                     <SkillGroupBlock key={i} group={group} />
                   ))}
                 </View>
+              ) : (
+                placeholders && (
+                  <View>
+                    <SidebarHeading>Skills</SidebarHeading>
+                    <View style={s.skillGroup}>
+                      <Text style={[s.skillName, hint]}>{PLACEHOLDER.skillGroup}</Text>
+                      <Text style={[s.languageLevel, hint]}>{PLACEHOLDER.skills}</Text>
+                    </View>
+                  </View>
+                )
               )}
 
               {languages.length > 0 && (
@@ -690,7 +671,6 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
             </View>
           </View>
         </Page>
-        )}
       </Document>
     </ThemeContext.Provider>
   );

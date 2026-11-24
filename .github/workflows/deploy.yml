@@ -34,6 +34,14 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Test (PDF)
+        run: npm test
+
+      - name: Test (browser)
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e
+
       - name: Build static site
         run: npm run build
         env:

@@ -2,17 +2,16 @@
 
 import { addResume, createResume, type SavedResume } from "./library";
 import { commitLibrary } from "./libraryStore";
-import { emptyResume } from "./schema";
-import { templateInfo, type TemplateId } from "./templates";
+import { newResumeData } from "./sampleMode";
+import { DEFAULT_TEMPLATE, type TemplateId } from "./templates";
 
 /**
- * Saves a brand-new blank resume that uses `template` (layout + colour).
- * Returns its id, and whether the browser actually stored it.
+ * Saves a brand-new resume that uses `template`. It starts with the sample
+ * content so the preview shows the template properly; the editor offers
+ * "Clear sample data". Returns its id, and whether the browser stored it.
  */
-export function createResumeFromTemplate(template: TemplateId = "coral"): { id: string; saved: boolean } {
-  const data = emptyResume();
-  data.style = { ...data.style, template, accentColor: templateInfo(template).accent };
-  return saveNewResume(createResume(data));
+export function createResumeFromTemplate(template: TemplateId = DEFAULT_TEMPLATE): { id: string; saved: boolean } {
+  return saveNewResume(createResume(newResumeData(template)));
 }
 
 /** Saves an already-built resume (blank, sample, ...) and returns its id. */

@@ -17,6 +17,7 @@ export const sampleResume: ResumeData = {
     phone: "512-555-0147",
     email: "maya.fernandes@example.com",
     website: "",
+    linkedin: "linkedin.com/in/maya-fernandes-sample",
   },
   summary: textToDoc(
     "Operations Manager with 6+ years of experience running warehouse, inventory and customer service teams. Cut stock-holding costs by 18% while raising order accuracy to 99.4%. Skilled in demand planning, vendor negotiation and coaching.",
@@ -29,6 +30,7 @@ export const sampleResume: ResumeData = {
       isCurrent: false,
       jobTitle: "Operations Manager",
       company: "Brightline Logistics",
+      location: "Austin, TX",
       logo: "",
       description: bulletsToDoc([
         "Redesigned the slotting and cycle-count process for a 40,000 sq ft warehouse, raising pick accuracy from 97.1% to 99.4% within six months.",
@@ -49,11 +51,12 @@ export const sampleResume: ResumeData = {
       isCurrent: false,
       jobTitle: "Assistant Operations Manager",
       company: "Brightline Logistics",
+      location: "Austin, TX",
       logo: "",
       description: bulletsToDoc([
         "Scheduled a team of 25 across three shifts and kept overtime below 5% of total hours during peak season.",
         "Wrote standard operating procedures for receiving, returns and stock transfers, and trained every new team member on them.",
-        "Acted as the main contact for 12 suppliers, resolving delivery and invoice issues within 48 hours.",
+        "Acted as the main contact for 12 suppliers and affiliated carriers, resolving delivery and invoice issues within 48 hours.",
       ]),
     },
     {
@@ -62,16 +65,27 @@ export const sampleResume: ResumeData = {
       isCurrent: true,
       jobTitle: "Senior Operations Manager",
       company: "Brightline Logistics",
+      location: "Austin, TX",
       logo: "",
       description: bulletsToDoc([
         "Oversee daily operations for two distribution centres handling 6,500 orders a day.",
         "Introduced barcode scanning at returns intake, cutting processing time per item by 40%.",
         "Partner with finance on monthly stock reconciliation, keeping variance under 0.3%.",
         "Manage an annual operating budget of $4.2M and report progress to the regional director.",
-        "Rolled out a cross-training programme so every team member can cover at least two roles.",
+        "Rolled out a cross-training programme so every team member can cover at least two roles, lifting labour efficiency by 12%.",
         "Plan seasonal staffing with HR, hiring and training 40 temporary staff each autumn.",
         "Review incoming shipments against purchase orders and resolve discrepancies with suppliers.",
         "Lead a weekly continuous-improvement meeting where front-line staff propose and test process changes.",
+      ]),
+    },
+  ],
+  projects: [
+    {
+      name: "Returns automation pilot",
+      link: "",
+      description: bulletsToDoc([
+        "Mapped the returns workflow end to end and introduced handheld scanners at two intake stations.",
+        "Cut manual data entry by 60% and gave the finance team same-day visibility of credits owed.",
       ]),
     },
   ],
@@ -81,6 +95,10 @@ export const sampleResume: ResumeData = {
       degree: "Bachelor of Business Administration, Supply Chain Management",
       institution: "State University",
     },
+  ],
+  certifications: [
+    { name: "Certified Supply Chain Professional (CSCP)", issuer: "ASCM", year: "2021" },
+    { name: "OSHA 30-Hour General Industry", issuer: "OSHA Training Institute", year: "2019" },
   ],
   skillGroups: [
     {
@@ -104,7 +122,7 @@ export const sampleResume: ResumeData = {
       skills: items("Returns processing", "Freight scheduling", "Receiving"),
     },
     {
-      name: "Order and warehouse systems",
+      name: "Warehouse Software",
       rating: 10,
       skills: items("WMS administration", "Barcode scanning"),
     },

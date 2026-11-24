@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { emptyBulletDoc, emptyDoc, isRichDoc, richTextToPlain, type RichDoc } from "./richText";
-import { defaultStyle, FONT_VALUES, HEX_COLOR } from "./theme";
+import { ATS_HEADER_VALUES, defaultStyle, FONT_VALUES, HEX_COLOR } from "./theme";
 import { EXPERIENCE_ORDERS } from "./experienceSort";
 import { LANGUAGE_LEVEL_VALUES } from "./languages";
 import { TEMPLATE_IDS } from "./templates";
@@ -25,6 +25,52 @@ export function extractYear(text: string | undefined): number | null {
 }
 
 const required = (message: string) => z.string().trim().min(1, message);
+
+/* ---------- Completely empty entries ---------- */
+
+const blank = (value: unknown) => typeof value !== "string" || value.trim() === "";
+const blankDoc = (value: unknown) => !isRichDoc(value) || richTextToPlain(value).trim() === "";
+const field = (entry: unknown, key: string) =>
+  entry && typeof entry === "object" ? (entry as Record<string, unknown>)[key] : undefined;
+
+/*
+ * An entry the user hasn't typed anything into (e.g. the empty job that
+ * "Clear form" leaves ready to fill in). Such entries are skipped: no
+ * validation messages and nothing in the PDF. Settings that have a default
+ * (a skill rating, a language level, the "Present" tick box) don't count
+ * as content. As soon as one text field is filled in, the entry is
+ * validated normally.
+ */
+export const isBlankExperience = (job: unknown) =>
+  ["startDate", "endDate", "jobTitle", "company", "location", "logo"].every((k) => blank(field(job, k))) &&
+  blankDoc(field(job, "description"));
+export const isBlankProject = (project: unknown) =>
+  ["name", "link"].every((k) => blank(field(project, k))) && blankDoc(field(project, "description"));
+export const isBlankEducation = (item: unknown) => ["year", "degree", "institution"].every((k) => blank(field(item, k)));
+export const isBlankCertification = (item: unknown) => ["name", "issuer", "year"].every((k) => blank(field(item, k)));
+export const isBlankSkillGroup = (group: unknown) => {
+  const skills = field(group, "skills");
+  return blank(field(group, "name")) && (!Array.isArray(skills) || skills.every((s) => blank(field(s, "value"))));
+};
+export const isBlankLanguage = (language: unknown) => blank(field(language, "name"));
+
+/**
+ * A list where completely empty entries are allowed (and skipped); every
+ * other entry must pass `entry`. Error messages keep their position
+ * (e.g. "projects.0.description"), so they show under the right field.
+ */
+function listSkippingBlank<T extends z.ZodType>(entry: T, isBlank: (value: unknown) => boolean) {
+  return z.array(z.custom<z.output<T>>()).superRefine((list, ctx) => {
+    list.forEach((item, index) => {
+      if (isBlank(item)) return;
+      const result = entry.safeParse(item);
+      if (result.success) return;
+      for (const issue of result.error.issues) {
+        ctx.addIssue({ code: "custom", message: issue.message, path: [index, ...issue.path] });
+      }
+    });
+  });
+}
 
 // Field arrays in React Hook Form need objects, so a "list of strings"
 // is stored as a list of { value: "..." }.
@@ -58,6 +104,12 @@ const personalSchema = z.object({
     .refine((v) => v === "" || WEBSITE_PATTERN.test(v), {
       message: "Enter a valid website, e.g. example.com or https://example.com",
     }),
+  linkedin: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || WEBSITE_PATTERN.test(v), {
+      message: "Enter a valid LinkedIn address, e.g. linkedin.com/in/your-name",
+    }),
 });
 
 const experienceSchema = z
@@ -69,6 +121,7 @@ const experienceSchema = z
     isCurrent: z.boolean(),
     jobTitle: required("Job title is required"),
     company: required("Company is required"),
+    location: z.string().trim().max(60, "Keep the location under 60 characters"),
     // Optional company logo: a small base64 PNG/JPG made by the app (lib/logo.ts).
     logo: z
       .string()
@@ -112,6 +165,30 @@ const educationSchema = z.object({
   institution: required("Institution is required"),
 });
 
+const projectSchema = z.object({
+  name: required("Project name is required").max(80, "Keep the project name under 80 characters"),
+  link: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || WEBSITE_PATTERN.test(v), {
+      message: "Enter a valid web address, e.g. github.com/you/project",
+    }),
+  description: richTextField(
+    "Add a short description of the project",
+    2000,
+    "Keep the description under 2000 characters",
+  ),
+});
+
+const certificationSchema = z.object({
+  name: required("Certification name is required").max(100, "Keep the name under 100 characters"),
+  issuer: z.string().trim().max(80, "Keep the issuer under 80 characters"),
+  year: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || YEAR_PATTERN.test(v), { message: "Include a 4-digit year, e.g. 2024" }),
+});
+
 const skillGroupSchema = z.object({
   name: required("Group name is required").max(60, "Keep the group name under 60 characters"),
   rating: z
@@ -131,10 +208,12 @@ export const resumeSchema = z.object({
   personal: personalSchema,
   summary: richTextField("Summary is required", 1200, "Keep the summary under 1200 characters"),
   experienceOrder: z.enum(EXPERIENCE_ORDERS),
-  experience: z.array(experienceSchema),
-  education: z.array(educationSchema),
-  skillGroups: z.array(skillGroupSchema),
-  languages: z.array(languageSchema).superRefine((list, ctx) => {
+  experience: listSkippingBlank(experienceSchema, isBlankExperience),
+  projects: listSkippingBlank(projectSchema, isBlankProject),
+  education: listSkippingBlank(educationSchema, isBlankEducation),
+  certifications: listSkippingBlank(certificationSchema, isBlankCertification),
+  skillGroups: listSkippingBlank(skillGroupSchema, isBlankSkillGroup),
+  languages: listSkippingBlank(languageSchema, isBlankLanguage).superRefine((list, ctx) => {
     // The same language twice is almost certainly a mistake.
     const seen = new Set<string>();
     list.forEach((lang, i) => {
@@ -153,12 +232,17 @@ export const resumeSchema = z.object({
     lineHeight: z.number().min(1, "Line spacing must be at least 1.0").max(2.5, "Line spacing can't be more than 2.5"),
     logoSize: z.number().min(12, "Logo size must be at least 12 pt").max(48, "Logo size can't be more than 48 pt"),
     accentColor: z.string().regex(HEX_COLOR, { message: "Pick a valid colour, e.g. #E8726E" }),
+    atsAccentColor: z.string().regex(HEX_COLOR, { message: "Pick one of the colours" }),
+    atsHeader: z.enum(ATS_HEADER_VALUES, { error: "Choose a header style" }),
+    atsBoldMetrics: z.boolean(),
   }),
 });
 
 export type ResumeData = z.infer<typeof resumeSchema>;
 export type Experience = ResumeData["experience"][number];
 export type Education = ResumeData["education"][number];
+export type Project = ResumeData["projects"][number];
+export type Certification = ResumeData["certifications"][number];
 export type SkillGroup = ResumeData["skillGroups"][number];
 export type ResumeStyle = ResumeData["style"];
 export type Language = ResumeData["languages"][number];
@@ -170,11 +254,16 @@ export const emptyExperience = (): Experience => ({
   isCurrent: false,
   jobTitle: "",
   company: "",
+  location: "",
   logo: "",
   description: emptyBulletDoc(),
 });
 
 export const emptyLanguage = (): Language => ({ name: "", level: "professional" });
+
+export const emptyProject = (): Project => ({ name: "", link: "", description: emptyBulletDoc() });
+
+export const emptyCertification = (): Certification => ({ name: "", issuer: "", year: "" });
 
 export const emptyEducation = (): Education => ({ year: "", degree: "", institution: "" });
 
@@ -185,11 +274,13 @@ export const emptySkillGroup = (): SkillGroup => ({
 });
 
 export const emptyResume = (): ResumeData => ({
-  personal: { fullName: "", jobTitle: "", location: "", phone: "", email: "", website: "" },
+  personal: { fullName: "", jobTitle: "", location: "", phone: "", email: "", website: "", linkedin: "" },
   summary: emptyDoc(),
   experienceOrder: "newest",
   experience: [],
+  projects: [],
   education: [],
+  certifications: [],
   skillGroups: [],
   languages: [],
   sidebarSummary: "",

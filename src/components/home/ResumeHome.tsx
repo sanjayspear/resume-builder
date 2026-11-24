@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import {
-  createResume,
   deleteResume,
   displayName,
   duplicateResume,
@@ -14,13 +13,14 @@ import {
   toBackup,
   type SavedResume,
 } from "@/lib/library";
-import { createResumeFromTemplate, editorUrl, saveNewResume } from "@/lib/createResume";
+import { createResumeFromTemplate, editorUrl } from "@/lib/createResume";
 import { commitLibrary, useLibrary } from "@/lib/libraryStore";
 import { pdfFileName, renderResumePdf, saveBlob } from "@/lib/pdf";
-import { sampleResume } from "@/lib/sampleData";
+import { isUntouchedSample, sampleLeftovers } from "@/lib/sampleMode";
 import { resumeSchema } from "@/lib/schema";
-import { templateInfo, TEMPLATES, type TemplateId } from "@/lib/templates";
+import { DEFAULT_TEMPLATE, templateInfo, TEMPLATES, type TemplateId } from "@/lib/templates";
 import { normalizeStyle } from "@/lib/theme";
+import { useConfirm } from "../ConfirmDialog";
 import { AppFooter } from "../AppFooter";
 import { AppHeader } from "../AppHeader";
 import { ResumeThumbnail } from "../ResumeThumbnail";
@@ -65,6 +65,7 @@ export default function ResumeHome() {
   }, []);
 
   const goToEditor = (id: string) => router.push(editorUrl(id));
+  const [confirmDialog, confirm] = useConfirm();
 
   /* ---------- Actions ---------- */
 
@@ -72,7 +73,7 @@ export default function ResumeHome() {
     if (!saved) setMessage({ kind: "error", text: STORAGE_ERROR });
     goToEditor(id);
   };
-  const createBlank = (template: TemplateId = "coral") => openNew(createResumeFromTemplate(template));
+  const createBlank = (template: TemplateId = DEFAULT_TEMPLATE) => openNew(createResumeFromTemplate(template));
 
   const handleCopy = (id: string) => {
     let copyId = "";
@@ -101,6 +102,17 @@ export default function ResumeHome() {
         text: `"${displayName(resume)}" has ${count} missing or invalid field${count === 1 ? "" : "s"}. Open it with Edit to fix ${count === 1 ? "it" : "them"}, then download.`,
       });
       return;
+    }
+    // Same sample-details check as the editor's Download button.
+    const leftovers = sampleLeftovers(check.data);
+    if (leftovers.length > 0) {
+      const ok = await confirm({
+        title: `Your resume still contains sample details (${leftovers.join(", ")}). Download anyway?`,
+        message: "These come from the example resume, not from you.",
+        cancelLabel: "Go back and edit",
+        confirmLabel: "Download anyway",
+      });
+      if (!ok) return;
     }
     setDownloadingId(resume.id);
     try {
@@ -241,8 +253,8 @@ export default function ResumeHome() {
               <span className="gloss-tile flex h-11 w-11 items-center justify-center rounded-full text-2xl transition group-hover:scale-105">
                 +
               </span>
-              <span className="mt-4 text-base font-bold">New blank resume</span>
-              <span className="mt-2 text-sm text-slate-500">Fill in your details and download a PDF in minutes</span>
+              <span className="mt-4 text-base font-bold">New resume</span>
+              <span className="mt-2 text-sm text-slate-500">Starts with an example you can clear in one click</span>
             </button>
           </li>
 
@@ -261,19 +273,6 @@ export default function ResumeHome() {
           ))}
         </ul>
 
-        {library !== null && allResumes.length === 0 && (
-          <p className="mt-4 text-sm text-slate-500">
-            New here?{" "}
-            <button
-              type="button"
-              onClick={() => openNew(saveNewResume(createResume(structuredClone(sampleResume))))}
-              className="font-semibold text-indigo-700 underline-offset-2 hover:underline"
-            >
-              Start from the sample resume
-            </button>{" "}
-            to see how it works.
-          </p>
-        )}
         {allResumes.length > 0 && visible.length === 0 && (
           <p className="mt-4 text-sm text-slate-500" role="status">
             No resumes match “{query.trim()}”.
@@ -300,6 +299,11 @@ export default function ResumeHome() {
                 <div className="mt-3 flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">{t.name}</p>
+                    {t.badge && (
+                      <p className="mt-0.5 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">
+                        {t.badge}
+                      </p>
+                    )}
                     <p className="text-xs text-slate-500">{t.description}</p>
                   </div>
                   <button type="button" onClick={() => createBlank(t.id)} aria-label={`Use ${t.name} template`} className={outlineButton}>
@@ -363,6 +367,7 @@ export default function ResumeHome() {
           setRenamingId(null);
         }}
       />
+      {confirmDialog}
     </div>
   );
 }
@@ -405,8 +410,9 @@ function ResumeCard({
         <ResumeThumbnail
           name={personal?.fullName?.trim() || "Your Name"}
           title={personal?.jobTitle?.trim() || "Job title"}
-          accent={style.accentColor}
+          accent={template.layout === "ats" ? style.atsAccentColor : style.accentColor}
           layout={template.layout}
+          atsHeader={style.atsHeader}
         />
       </button>
       {/* Delete: a separate button on top of the preview (buttons can't be nested). */}
@@ -422,9 +428,23 @@ function ResumeCard({
         </svg>
       </button>
       <div className="flex flex-1 flex-col p-4">
-        <h3 className="text-[15px] font-bold leading-snug">{name}</h3>
+        <h3 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] font-bold leading-snug">
+          <span>{name}</span>
+          {isUntouchedSample(resume.data) && (
+            <span
+              data-testid="sample-badge"
+              title="Still the example content: open it and choose Clear sample data"
+              className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800"
+            >
+              Sample
+            </span>
+          )}
+        </h3>
         <p className="mt-1 text-xs text-slate-500">
-          {template.name} template, edited {describeEdited(resume.updatedAt, ", ")}
+          <span data-testid="resume-card-template" className="font-medium text-slate-700">
+            {template.name}
+          </span>{" "}
+          template, edited {describeEdited(resume.updatedAt, ", ")}
         </p>
         <div className="mt-auto flex gap-2 pt-4">
           <button type="button" onClick={onEdit} aria-label={`Edit ${name}`} className={`${darkButton} flex-1`}>

@@ -10,9 +10,11 @@ import {
 } from "@/lib/experienceSort";
 import { LANGUAGE_LEVELS } from "@/lib/languages";
 import {
+  emptyCertification,
   emptyEducation,
   emptyExperience,
   emptyLanguage,
+  emptyProject,
   emptySkillGroup,
   type ResumeData,
 } from "@/lib/schema";
@@ -37,7 +39,8 @@ export function PersonalSection() {
         <TextField label="Location" error={e?.location} placeholder="City, State" {...register("personal.location")} />
         <TextField label="Phone" error={e?.phone} type="tel" autoComplete="tel" {...register("personal.phone")} />
         <TextField label="Email *" error={e?.email} type="email" autoComplete="email" {...register("personal.email")} />
-        <TextField label="Website" error={e?.website} placeholder="example.com" autoComplete="url" {...register("personal.website")} />
+        <TextField label="Website / portfolio" error={e?.website} placeholder="example.com" autoComplete="url" {...register("personal.website")} />
+        <TextField label="LinkedIn" error={e?.linkedin} placeholder="linkedin.com/in/your-name" {...register("personal.linkedin")} />
       </div>
     </Section>
   );
@@ -47,7 +50,7 @@ export function PersonalSection() {
 
 export function SummarySection() {
   return (
-    <Section title="Summary" description="A short paragraph at the top of the main column.">
+    <Section title="Summary" description="A short paragraph at the top of your resume.">
       <RichTextField name="summary" label="Summary *" hint="Select text to make it bold, italic or underlined." />
     </Section>
   );
@@ -108,6 +111,7 @@ function ExperienceEntry({ index, onRemove }: { index: number; onRemove: () => v
         </div>
         <TextField label="Job title *" error={e?.jobTitle} {...register(`${path}.jobTitle`)} />
         <TextField label="Company *" error={e?.company} {...register(`${path}.company`)} />
+        <TextField label="City" error={e?.location} placeholder="e.g. Austin, TX" {...register(`${path}.location`)} />
       </div>
       <LogoField index={index} />
       <RichTextField
@@ -194,6 +198,42 @@ export function ExperienceSection() {
   );
 }
 
+/* ---------- 3b. Projects (optional) ---------- */
+
+export function ProjectsSection() {
+  const {
+    control,
+    register,
+    formState: { errors },
+  } = useFormContext<ResumeData>();
+  const { fields, append, remove } = useFieldArray({ control, name: "projects" });
+  return (
+    <Section title="Projects" description="Optional. Shown after Work experience; leave empty to hide the section.">
+      {fields.map((field, index) => {
+        const e = errors.projects?.[index];
+        const path = `projects.${index}` as const;
+        return (
+          <EntryCard
+            key={field.id}
+            title={`Project ${index + 1}`}
+            onRemove={() => remove(index)}
+            removeLabel={`Remove project ${index + 1}`}
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              <TextField label="Project name *" error={e?.name} {...register(`${path}.name`)} />
+              <TextField label="Link" error={e?.link} placeholder="github.com/you/project" {...register(`${path}.link`)} />
+            </div>
+            <RichTextField name={`${path}.description`} label="Description *" hint="What you built and the result." />
+          </EntryCard>
+        );
+      })}
+      <AddButton onClick={() => append(emptyProject(), { focusName: `projects.${fields.length}.name` })}>
+        Add project
+      </AddButton>
+    </Section>
+  );
+}
+
 /* ---------- 4. Education ---------- */
 
 export function EducationSection() {
@@ -225,6 +265,42 @@ export function EducationSection() {
       })}
       <AddButton onClick={() => append(emptyEducation(), { focusName: `education.${fields.length}.year` })}>
         Add education
+      </AddButton>
+    </Section>
+  );
+}
+
+/* ---------- 4b. Certifications (optional) ---------- */
+
+export function CertificationsSection() {
+  const {
+    control,
+    register,
+    formState: { errors },
+  } = useFormContext<ResumeData>();
+  const { fields, append, remove } = useFieldArray({ control, name: "certifications" });
+  return (
+    <Section title="Certifications" description="Optional. Shown after Education; leave empty to hide the section.">
+      {fields.map((field, index) => {
+        const e = errors.certifications?.[index];
+        const path = `certifications.${index}` as const;
+        return (
+          <EntryCard
+            key={field.id}
+            title={`Certification ${index + 1}`}
+            onRemove={() => remove(index)}
+            removeLabel={`Remove certification ${index + 1}`}
+          >
+            <TextField label="Certification *" error={e?.name} {...register(`${path}.name`)} />
+            <div className="grid gap-3 sm:grid-cols-[1fr_8rem]">
+              <TextField label="Issued by" error={e?.issuer} {...register(`${path}.issuer`)} />
+              <TextField label="Year" error={e?.year} placeholder="2024" {...register(`${path}.year`)} />
+            </div>
+          </EntryCard>
+        );
+      })}
+      <AddButton onClick={() => append(emptyCertification(), { focusName: `certifications.${fields.length}.name` })}>
+        Add certification
       </AddButton>
     </Section>
   );
@@ -282,7 +358,10 @@ export function SkillsSection() {
   const { control } = useFormContext<ResumeData>();
   const { fields, append, remove } = useFieldArray({ control, name: "skillGroups" });
   return (
-    <Section title="Skill groups" description="Shown in the sidebar with a 1-10 rating bar.">
+    <Section
+      title="Skill groups"
+      description="Classic Sidebar shows each group with a 1-10 rating bar; Modern ATS lists the skills as text."
+    >
       {fields.map((field, index) => (
         <SkillGroupEntry key={field.id} index={index} onRemove={() => remove(index)} />
       ))}
@@ -303,7 +382,7 @@ export function LanguagesSection() {
   } = useFormContext<ResumeData>();
   const { fields, append, remove } = useFieldArray({ control, name: "languages" });
   return (
-    <Section title="Languages" description="Shown in the sidebar under Skills.">
+    <Section title="Languages" description="Shown under Skills (Classic Sidebar) or at the end (Modern ATS).">
       {fields.length > 0 && (
         <ul className="space-y-3" aria-label="Languages">
           {fields.map((field, index) => {
@@ -363,7 +442,10 @@ export function SidebarSummarySection() {
     formState: { errors },
   } = useFormContext<ResumeData>();
   return (
-    <Section title="Sidebar summary" description="A short highlight shown at the bottom of the sidebar.">
+    <Section
+      title="Sidebar summary"
+      description="Classic Sidebar only: a short highlight at the bottom of the sidebar. Modern ATS leaves it out so your summary isn't repeated."
+    >
       <TextAreaField
         label="Highlight"
         error={errors.sidebarSummary}

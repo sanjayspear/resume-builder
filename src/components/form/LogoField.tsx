@@ -152,7 +152,7 @@ function LogoInput({
           </div>
           {!message && (
             <p className="text-xs text-slate-500">
-              PNG, JPG or SVG. Resized to fit {LOGO_MAX_PX}×{LOGO_MAX_PX} px. Change how big logos look in Design → Logo size.
+              PNG, JPG or SVG. Resized to fit {LOGO_MAX_PX}×{LOGO_MAX_PX} px. Shown in Classic Sidebar only (Design → Logo size).
             </p>
           )}
           <ErrorText id={`${id}-error`} message={message} />

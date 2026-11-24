@@ -43,3 +43,18 @@ export function GlobeIcon() {
     </Svg>
   );
 }
+
+/** The "in" mark in a rounded square, for a LinkedIn profile link. */
+export function LinkedInIcon({ background }: { background: string }) {
+  return (
+    <Svg width={SIZE} height={SIZE} viewBox="0 0 24 24">
+      <Rect x={2} y={2} width={20} height={20} rx={3.5} fill={INK} />
+      <Circle cx={7.6} cy={7.4} r={1.7} fill={background} />
+      <Rect x={6.1} y={10} width={3} height={8.5} fill={background} />
+      <Path
+        d="M11.2 10h2.9v1.3c.5-.9 1.6-1.5 3-1.5 2.3 0 3.4 1.5 3.4 4v4.7h-3v-4.2c0-1.2-.4-1.9-1.5-1.9s-1.8.8-1.8 1.9v4.2h-3z"
+        fill={background}
+      />
+    </Svg>
+  );
+}

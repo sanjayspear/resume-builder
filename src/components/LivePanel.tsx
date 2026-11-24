@@ -45,7 +45,8 @@ export function LivePanel({ control }: { control: Control<ResumeData> }) {
     let cancelled = false; // ignore results from an older, slower render
     (async () => {
       try {
-        const blob = await renderResumePdf(JSON.parse(previewJson) as ResumeData);
+        // Preview only: grey hints where fields are empty. Downloads never include them.
+        const blob = await renderResumePdf(JSON.parse(previewJson) as ResumeData, { placeholders: true });
         const pages = await pdfToImages(blob);
         if (cancelled) {
           pages.forEach((url) => URL.revokeObjectURL(url));
@@ -84,7 +85,11 @@ export function LivePanel({ control }: { control: Control<ResumeData> }) {
       className="min-w-0 lg:sticky lg:top-[4.5rem] lg:h-[calc(100vh-5.5rem)] lg:overflow-y-auto"
     >
       <DesignControls />
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+      {/* Sticky: the status and "Open full size" stay in view while you scroll through the pages. */}
+      <div
+        data-testid="preview-header"
+        className="sticky top-0 z-10 mb-3 flex flex-wrap items-center gap-2 rounded-xl bg-white/85 px-3 py-2 shadow-sm ring-1 ring-slate-200/70 backdrop-blur"
+      >
         <h2 className="text-base font-bold text-slate-900">Live preview</h2>
         <span
           data-testid="preview-status"

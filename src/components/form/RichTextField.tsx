@@ -9,7 +9,7 @@ import { normalizeRichDoc, type RichDoc, type TextAlign as Align } from "@/lib/r
 import type { ResumeData } from "@/lib/schema";
 import { ErrorText, toId } from "../ui";
 
-type RichName = "summary" | `experience.${number}.description`;
+type RichName = "summary" | `experience.${number}.description` | `projects.${number}.description`;
 
 /**
  * A formatted-text field (bold, italic, underline, bullet lists, alignment)

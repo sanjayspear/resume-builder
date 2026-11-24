@@ -1,5 +1,5 @@
 import { bulletsToDoc, normalizeRichDoc } from "./richText";
-import { emptyExperience, emptyResume, type Experience, type ResumeData } from "./schema";
+import { emptyExperience, emptyResume, type Certification, type Experience, type Project, type ResumeData } from "./schema";
 import { LANGUAGE_LEVEL_VALUES, type LanguageLevel } from "./languages";
 import { normalizeStyle } from "./theme";
 
@@ -61,12 +61,22 @@ export function normalizeResumeData(value: unknown): ResumeData {
   const list = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
   const text = (v: unknown, fallback: string) => (typeof v === "string" ? v : fallback);
   return {
-    personal: { ...base.personal, ...(saved.personal && typeof saved.personal === "object" ? saved.personal : {}) },
+    // Every personal field becomes a string ("" when missing, e.g. LinkedIn in older saves).
+    personal: Object.fromEntries(
+      Object.entries(base.personal).map(([key, fallback]) => [
+        key,
+        text((saved.personal as Record<string, unknown> | undefined)?.[key], fallback),
+      ]),
+    ) as ResumeData["personal"],
     // Older saves stored the summary as plain text; normalizeRichDoc converts it.
     summary: normalizeRichDoc(saved.summary),
     experienceOrder: saved.experienceOrder === "oldest" ? "oldest" : "newest",
     experience: list<Record<string, unknown>>(saved.experience).map(normalizeExperience),
+    projects: list<Record<string, unknown>>(saved.projects).map(normalizeProject),
     education: list(saved.education),
+    certifications: list<Record<string, unknown>>(saved.certifications).map(
+      (c): Certification => ({ name: text(c?.name, ""), issuer: text(c?.issuer, ""), year: text(c?.year, "") }),
+    ),
     skillGroups: list(saved.skillGroups),
     languages: list<Record<string, unknown>>(saved.languages).map((lang) => ({
       name: text(lang?.name, ""),
@@ -96,9 +106,15 @@ function normalizeExperience(job: Record<string, unknown>): Experience {
     isCurrent: job.isCurrent === true,
     jobTitle: str(job.jobTitle),
     company: str(job.company),
+    location: str(job.location),
     logo: typeof job.logo === "string" && job.logo.startsWith("data:image/") ? job.logo : "",
     description,
   };
+}
+
+function normalizeProject(project: Record<string, unknown>): Project {
+  const str = (v: unknown) => (typeof v === "string" ? v : "");
+  return { name: str(project?.name), link: str(project?.link), description: normalizeRichDoc(project?.description) };
 }
 
 function normalizeSavedResume(value: unknown): SavedResume | null {

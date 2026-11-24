@@ -1,5 +1,5 @@
 import type { TemplateLayout } from "@/lib/templates";
-import { tint } from "@/lib/theme";
+import { tint, type AtsHeaderStyle } from "@/lib/theme";
 
 /*
  * A small drawing of a resume's first page (name, title, colour, layout) for
@@ -29,38 +29,23 @@ export function ResumeThumbnail({
   title,
   accent,
   layout,
+  atsHeader = "banner",
   accentHeadings = false,
 }: {
   name: string;
   title: string;
   accent: string;
   layout: TemplateLayout;
+  /** Modern ATS header design to draw (ignored for Classic Sidebar). */
+  atsHeader?: AtsHeaderStyle;
   /** Template previews colour the section headings; resume cards keep them dark. */
   accentHeadings?: boolean;
 }) {
   const heading = accentHeadings ? accent : "#3F4652";
   return (
     <div aria-hidden className="mx-auto flex h-full w-[84%] flex-col overflow-hidden bg-white text-left shadow-[0_2px_10px_rgba(15,23,42,0.12)]">
-      {layout === "minimal" ? (
-        <>
-          <div className="border-b border-slate-100 bg-white px-[8%] pb-2 pt-3">
-            <p className="truncate text-[9px] font-bold leading-tight text-slate-900">{name}</p>
-            <p className="truncate text-[6px] text-slate-500">{title}</p>
-          </div>
-          <div className="space-y-[5px] px-[8%] pt-2.5">
-            <Line w="42%" color={heading} h={3} />
-            <Line w="92%" />
-            <Line w="80%" />
-            <span className="block h-1" />
-            <Line w="38%" color={heading} h={3} />
-            <Line w="90%" />
-            <Line w="86%" />
-            <Line w="70%" />
-            <span className="block h-1" />
-            <Line w="34%" color={heading} h={3} />
-            <Line w="88%" />
-          </div>
-        </>
+      {layout === "ats" ? (
+        <AtsThumbnail name={name} title={title} accent={accent} header={atsHeader} />
       ) : (
         <>
           <div className="flex h-[17%] min-h-6">
@@ -101,6 +86,55 @@ export function ResumeThumbnail({
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/** Modern ATS in miniature: the chosen header, then sections with accent bars. */
+function AtsThumbnail({ name, title, accent, header }: { name: string; title: string; accent: string; header: AtsHeaderStyle }) {
+  const section = (titleWidth: string, lines: string[]) => (
+    <>
+      <span className="block h-[2px] w-[9%]" style={{ backgroundColor: accent }} />
+      <Line w={titleWidth} color={accent} h={3} />
+      {lines.map((w, i) => (
+        <Line key={i} w={w} />
+      ))}
+      <span className="block h-[2px]" />
+    </>
+  );
+  return (
+    <div className="flex h-full flex-col">
+      {header === "banner" ? (
+        <div className="px-[9%] pb-2 pt-3 text-center" style={{ backgroundColor: accent }}>
+          <p className="truncate text-[9px] font-bold leading-tight text-white">{name}</p>
+          <p className="truncate text-[5.5px] text-white/90">{title}</p>
+          <span className="mx-auto mt-[3px] block h-[2px] w-[70%] rounded-full bg-white/60" />
+        </div>
+      ) : header === "accent" ? (
+        <div className="mx-[9%] mt-3 flex gap-[5px] border-b border-slate-100 pb-2">
+          <span className="block w-[3px] shrink-0" style={{ backgroundColor: accent }} />
+          <div className="min-w-0">
+            <p className="truncate text-[9px] font-bold leading-tight" style={{ color: accent }}>
+              {name}
+            </p>
+            <p className="truncate text-[5.5px] text-slate-500">{title}</p>
+            <span className="mt-[3px] block"><Line w="90%" h={2} /></span>
+          </div>
+        </div>
+      ) : (
+        <div className="mx-[9%] mt-3 pb-1.5" style={{ borderBottom: `1.5px solid ${accent}` }}>
+          <p className="truncate text-[9px] font-bold leading-tight" style={{ color: accent }}>
+            {name}
+          </p>
+          <p className="truncate text-[5.5px] text-slate-500">{title}</p>
+          <span className="mt-[3px] block"><Line w="78%" h={2} /></span>
+        </div>
+      )}
+      <div className="space-y-[3px] px-[9%] pt-2">
+        {section("26%", ["94%", "82%"])}
+        {section("20%", ["70%", "62%"])}
+        {section("38%", ["90%", "86%", "74%"])}
+      </div>
     </div>
   );
 }

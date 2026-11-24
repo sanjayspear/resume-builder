@@ -5,14 +5,15 @@
  *   npm run pdf:sample -- out.pdf long      doubled content (tests page breaks)
  *   npm run pdf:sample -- out.pdf styled    formatting + a different font/size/colour
  *   npm run pdf:sample -- out.pdf features [logoSize]  logos, languages, oldest-to-latest order
- *   npm run pdf:sample -- out.pdf minimal   the one-column "Minimal" template (with logos + languages)
+ *   npm run pdf:sample -- out.pdf ats       the one-column "Modern ATS" template (logos in the data are ignored)
+ *   npm run pdf:sample -- out.pdf ats-long  Modern ATS with doubled content (tests page breaks)
  */
 import { renderToFile, type DocumentProps } from "@react-pdf/renderer";
 import path from "node:path";
 import { createElement, type ReactElement } from "react";
 import { deflateSync } from "node:zlib";
 import { ResumeDocument } from "../src/pdf/ResumeDocument";
-import { registerFonts } from "../src/pdf/fonts";
+import { registerFonts, repairGlyphCache } from "../src/pdf/fonts";
 import type { RichDoc } from "../src/lib/richText";
 import { sampleResume } from "../src/lib/sampleData";
 import type { ResumeData } from "../src/lib/schema";
@@ -74,26 +75,28 @@ function circleLogo(w: number, h: number, [r, g, b]: [number, number, number]): 
 }
 
 let data: ResumeData = sampleResume;
-if (variant === "long") {
+if (variant === "long" || variant === "ats-long") {
   data = { ...sampleResume, experience: [...sampleResume.experience, ...sampleResume.experience], skillGroups: [...sampleResume.skillGroups, ...sampleResume.skillGroups] };
 } else if (variant === "styled") {
   data = {
     ...sampleResume,
     summary: formattedSummary,
     experience: [{ ...sampleResume.experience[0], description: formattedJob }, ...sampleResume.experience.slice(1)],
-    style: { template: "coral", fontFamily: "Gelasio", fontSize: 9.5, lineHeight: 1.5, accentColor: "#1F8A8A", logoSize: 24 },
+    style: { ...sampleResume.style, template: "classic", fontFamily: "Gelasio", fontSize: 9.5, lineHeight: 1.5, accentColor: "#1F8A8A" },
   };
 }
 
-if (variant === "features" || variant === "minimal") {
+if (variant === "ats-long") data = { ...data, style: { ...data.style, template: "modern-ats" } };
+
+if (variant === "features" || variant === "ats") {
   data = {
     ...sampleResume,
     style: {
       ...sampleResume.style,
       logoSize: Number(process.argv[4] ?? 24),
-      ...(variant === "minimal" ? { template: "minimal" as const, accentColor: "#1F2937" } : {}),
+      ...(variant === "ats" ? { template: "modern-ats" as const } : {}),
     },
-    experienceOrder: variant === "minimal" ? "newest" : "oldest",
+    experienceOrder: variant === "ats" ? "newest" : "oldest",
     experience: sampleResume.experience.map((job, i) => ({
       ...job,
       logo: i === 0 ? circleLogo(100, 60, [232, 114, 110]) : i === 2 ? circleLogo(80, 80, [47, 111, 176]) : "",
@@ -106,6 +109,7 @@ if (variant === "features" || variant === "minimal") {
   };
 }
 
+repairGlyphCache();
 const doc = createElement(ResumeDocument, { data }) as unknown as ReactElement<DocumentProps>;
 await renderToFile(doc, out);
 console.log("Wrote", out);

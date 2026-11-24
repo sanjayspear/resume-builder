@@ -22,12 +22,14 @@ Open an issue and include:
 4. Before opening a pull request, make sure these pass:
    ```bash
    npm run lint
+   npm test              # renders PDFs and checks their extracted text
+   npm run test:e2e      # browser tests (first time: npx playwright install chromium)
    npm run build
    npm run build:pages   # the static version published to GitHub Pages
    ```
 5. If you changed the PDF layout, render a sample and look at it:
    ```bash
-   npm run pdf:sample -- sample.pdf long   # also try: styled, features, minimal
+   npm run pdf:sample -- sample.pdf long   # also try: styled, features, ats, ats-long
    ```
 6. Open a pull request describing what changed and why. Screenshots help for UI changes.
 

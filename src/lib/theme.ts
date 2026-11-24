@@ -1,8 +1,10 @@
-import { DEFAULT_TEMPLATE, TEMPLATE_IDS, type TemplateId } from "./templates";
+import { DEFAULT_TEMPLATE, resolveTemplateId, type TemplateId } from "./templates";
 
 /*
  * Document design options: font, base size, line spacing, accent colour.
- * The defaults reproduce the app's original Coral sidebar design.
+ * Font, size and spacing apply to Classic Sidebar; Modern ATS uses fixed,
+ * scanner-friendly typography and only its own accent colour.
+ * The defaults reproduce the app's original Classic Sidebar design.
  */
 
 export const FONT_OPTIONS = [
@@ -51,12 +53,56 @@ export const ACCENT_PRESETS = [
   { value: "#B8862B", label: "Gold" },
 ] as const;
 
+/**
+ * Accent colours for Modern ATS. Each one has at least 4.5:1 contrast with
+ * white (WCAG AA for normal text), which covers both uses: coloured text on
+ * white paper (headings, company names) and white text on the coloured
+ * Banner header. That's why amber and emerald are deep shades (the bright
+ * versions only reach about 2.2:1 and 2.5:1). The tests check every preset.
+ * Colour is decoration only: headings are also bold and uppercase.
+ */
+export const ATS_ACCENT_PRESETS = [
+  { value: "#1E3A5F", label: "Navy" },
+  { value: "#1D4ED8", label: "Royal blue" },
+  { value: "#0F5E63", label: "Teal" },
+  { value: "#047857", label: "Emerald" },
+  { value: "#2E5E3A", label: "Forest green" },
+  { value: "#B45309", label: "Amber" },
+  { value: "#7A2E3B", label: "Burgundy" },
+  { value: "#6B2D6B", label: "Plum" },
+  { value: "#334155", label: "Slate" },
+] as const;
+
+/** Modern ATS header designs. All three contain the same text in the same order. */
+export const ATS_HEADER_STYLES = [
+  { value: "banner", label: "Banner", description: "Colour band, white text" },
+  { value: "accent", label: "Left accent", description: "Accent bar beside the name" },
+  { value: "minimal", label: "Minimal", description: "Plain, with a thin rule" },
+] as const;
+export type AtsHeaderStyle = (typeof ATS_HEADER_STYLES)[number]["value"];
+export const ATS_HEADER_VALUES = ATS_HEADER_STYLES.map((h) => h.value) as [AtsHeaderStyle, ...AtsHeaderStyle[]];
+
+/** WCAG contrast ratio between two #RRGGBB colours (1 to 21). */
+export function contrastRatio(a: string, b: string): number {
+  const luminance = (hex: string) => {
+    const [r, g, bl] = [1, 3, 5]
+      .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+      .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
+  };
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
 export type DocumentStyle = {
-  template: TemplateId; // layout + starting colour (lib/templates.ts)
+  template: TemplateId; // PDF design (lib/templates.ts)
   fontFamily: FontFamily;
   fontSize: number; // base body text size, in points
   lineHeight: number; // multiple of the font size
-  accentColor: string; // #RRGGBB
+  accentColor: string; // #RRGGBB, Classic Sidebar
+  atsAccentColor: string; // #RRGGBB, Modern ATS (one of ATS_ACCENT_PRESETS)
+  atsHeader: AtsHeaderStyle; // Modern ATS header design
+  atsBoldMetrics: boolean; // Modern ATS: draw metrics like 40% or $140K in bold
   logoSize: number; // company logo width/height, in points
 };
 
@@ -68,6 +114,9 @@ export const defaultStyle = (): DocumentStyle => ({
   fontSize: DEFAULT_FONT_SIZE,
   lineHeight: 1.32,
   accentColor: "#E8726E",
+  atsAccentColor: ATS_ACCENT_PRESETS[0].value,
+  atsHeader: "banner", // new resumes; see normalizeStyle for older saves
+  atsBoldMetrics: true,
   logoSize: 24,
 });
 
@@ -96,11 +145,18 @@ export function normalizeStyle(value: unknown): DocumentStyle {
       ? options.reduce((best, o) => (Math.abs(o - n) < Math.abs(best - n) ? o : best), options[0])
       : fallback;
   return {
-    template: TEMPLATE_IDS.includes(v.template as TemplateId) ? (v.template as TemplateId) : base.template,
+    // Older saves used "coral", "slate", "ocean" or "minimal"; see templates.ts.
+    template: resolveTemplateId(v.template),
     fontFamily: FONT_VALUES.includes(v.fontFamily as FontFamily) ? (v.fontFamily as FontFamily) : base.fontFamily,
     fontSize: nearest(v.fontSize, FONT_SIZE_OPTIONS, base.fontSize),
     lineHeight: nearest(v.lineHeight, LINE_HEIGHT_OPTIONS.map((o) => o.value), base.lineHeight),
     logoSize: nearest(v.logoSize, LOGO_SIZE_OPTIONS.map((o) => o.value), base.logoSize),
     accentColor: typeof v.accentColor === "string" && HEX_COLOR.test(v.accentColor) ? v.accentColor : base.accentColor,
+    atsAccentColor:
+      ATS_ACCENT_PRESETS.find((p) => p.value.toLowerCase() === String(v.atsAccentColor).toLowerCase())?.value ??
+      base.atsAccentColor,
+    // Saved before header styles existed: keep the look they had (Minimal).
+    atsHeader: ATS_HEADER_VALUES.includes(v.atsHeader as AtsHeaderStyle) ? (v.atsHeader as AtsHeaderStyle) : "minimal",
+    atsBoldMetrics: typeof v.atsBoldMetrics === "boolean" ? v.atsBoldMetrics : true,
   };
 }

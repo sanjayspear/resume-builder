@@ -3,19 +3,23 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FormProvider, useForm, useWatch } from "react-hook-form";
+import { FormProvider, useForm, useWatch, type Control } from "react-hook-form";
 import { sortExperience } from "@/lib/experienceSort";
 import { templateInfo } from "@/lib/templates";
 import { displayName, findResume, updateResumeData, type SavedResume } from "@/lib/library";
 import { commitLibrary, useLibrary } from "@/lib/libraryStore";
 import { pdfFileName, renderResumePdf, saveBlob } from "@/lib/pdf";
 import { sampleResume } from "@/lib/sampleData";
-import { emptyResume, resumeSchema, type ResumeData } from "@/lib/schema";
+import { clearedContent, hasNoContent, isUntouchedSample, sampleLeftovers } from "@/lib/sampleMode";
+import { resumeSchema, type ResumeData } from "@/lib/schema";
+import { useConfirm } from "../ConfirmDialog";
 import {
+  CertificationsSection,
   EducationSection,
   ExperienceSection,
   LanguagesSection,
   PersonalSection,
+  ProjectsSection,
   SidebarSummarySection,
   SkillsSection,
   SummarySection,
@@ -39,7 +43,76 @@ const AUTOSAVE_DELAY_MS = 400;
 const buttonBase =
   "inline-flex h-9 items-center justify-center rounded-lg px-3.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60";
 
-type Message = { kind: "success" | "error" | "info"; text: string };
+/**
+ * "Load sample data". Unavailable while the form already holds the untouched
+ * sample (worked out from the content, so it's right after a refresh too).
+ * It uses aria-disabled instead of `disabled`, so it stays focusable and can
+ * show why it's unavailable on hover and keyboard focus.
+ */
+function LoadSampleButton({ control, onLoad }: { control: Control<ResumeData>; onLoad: () => void }) {
+  const values = useWatch({ control }) as ResumeData;
+  const unavailable = isUntouchedSample(values);
+  return (
+    <span className="group relative inline-flex">
+      <button
+        type="button"
+        aria-disabled={unavailable ? "true" : undefined}
+        aria-describedby={unavailable ? "load-sample-tip" : undefined}
+        onClick={() => {
+          if (!unavailable) onLoad();
+        }}
+        className={`${buttonBase} btn-light ${unavailable ? "cursor-not-allowed opacity-50" : ""}`}
+      >
+        Load sample data
+      </button>
+      {unavailable && (
+        <span
+          id="load-sample-tip"
+          role="tooltip"
+          className="pointer-events-none absolute right-0 top-full z-30 mt-1.5 hidden whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-xs font-medium text-white shadow-lg group-hover:block group-focus-within:block"
+        >
+          Sample data is already loaded
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** A status message; `undo` holds the content to bring back with the Undo button. */
+type Message = { kind: "success" | "error" | "info"; text: string; undo?: ResumeData };
+
+/** How long "Form cleared" (and its Undo button) stays visible. */
+const UNDO_MS = 10_000;
+
+/**
+ * "You're looking at sample data" banner. Shown only while the content is
+ * still exactly the sample, so it disappears as soon as you edit anything.
+ * (A separate component, so only it re-renders on every keystroke.)
+ */
+function SampleBanner({ control, onClear }: { control: Control<ResumeData>; onClear: () => void }) {
+  const values = useWatch({ control }) as ResumeData;
+  if (!isUntouchedSample(values)) return null;
+  return (
+    <div
+      role="region"
+      aria-label="Sample data"
+      data-testid="sample-banner"
+      className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+    >
+      <p className="min-w-0 flex-1">
+        <strong className="font-semibold">You&apos;re looking at sample data.</strong> Clear it to start entering your
+        own details.
+      </p>
+      <button
+        type="button"
+        onClick={onClear}
+        className="h-9 rounded-lg bg-amber-900 px-3.5 text-sm font-semibold text-white hover:bg-amber-950"
+      >
+        Clear sample data
+      </button>
+    </div>
+  );
+}
 
 /** Editor page: finds the resume from the URL (?id=...) and shows the form. */
 export default function ResumeEditor({ id }: { id: string | null }) {
@@ -83,10 +156,17 @@ function EditorForm({ resume }: { resume: SavedResume }) {
     mode: "onTouched", // show an error once you leave a field...
     reValidateMode: "onChange", // ...then update it as you type
   });
-  const { control, reset, getValues, handleSubmit, formState, subscribe } = methods;
+  const { control, reset, getValues, handleSubmit, formState, subscribe, setFocus } = methods;
+  const [confirmDialog, confirm] = useConfirm();
 
   const [downloading, setDownloading] = useState(false);
   const [message, setMessage] = useState<Message | null>(null);
+  // A message with Undo disappears by itself after UNDO_MS.
+  useEffect(() => {
+    if (!message?.undo) return;
+    const timer = setTimeout(() => setMessage(null), UNDO_MS);
+    return () => clearTimeout(timer);
+  }, [message]);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const pendingRef = useRef(false);
 
@@ -132,29 +212,70 @@ function EditorForm({ resume }: { resume: SavedResume }) {
   const errorCount = countErrors(formState.errors);
   const showErrorSummary = formState.submitCount > 0 && errorCount > 0;
 
-  // "Empty" means no content; the Design settings don't count.
-  const contentOnly = (data: ResumeData) => JSON.stringify({ ...data, style: null });
-  const isFormEmpty = () => contentOnly(getValues()) === contentOnly(emptyResume());
-
-  const handleLoadSample = () => {
-    if (!isFormEmpty() && !window.confirm("Replace the content of this resume with the sample resume?")) return;
+  const handleLoadSample = async () => {
+    const values = getValues();
+    // Only ask when there's something of yours to lose.
+    if (!hasNoContent(values) && !isUntouchedSample(values)) {
+      const ok = await confirm({
+        title: "Replace your details with the sample resume?",
+        message: "Everything you typed in this resume will be replaced. Your design settings are kept.",
+        cancelLabel: "Cancel",
+        confirmLabel: "Replace",
+        danger: true,
+      });
+      if (!ok) return;
+    }
     // Replace the content but keep this resume's Design choices.
     // Keep this resume's Design and date order; show the jobs sorted.
     const { style, experienceOrder } = getValues();
     const sample = structuredClone(sampleResume);
     reset({ ...sample, style, experienceOrder, experience: sortExperience(sample.experience, experienceOrder) });
-    setMessage({ kind: "info", text: "Sample data loaded." });
+    // No separate message: the "You're looking at sample data" banner says it.
+    setMessage(null);
   };
 
-  const handleClear = () => {
-    if (!window.confirm("Clear everything in this resume? This can't be undone.")) return;
-    reset({ ...emptyResume(), style: getValues().style }); // keep the Design choices
-    setMessage(null);
+  /**
+   * Empties the content (keeping template, colours and other design choices),
+   * leaving one empty entry per section. Asks first, unless there's nothing
+   * of yours to lose (untouched sample or already empty). Undo is offered
+   * for a few seconds.
+   */
+  const handleClear = async () => {
+    const values = getValues();
+    if (!isUntouchedSample(values) && !hasNoContent(values)) {
+      const ok = await confirm({
+        title: "Clear all details from this resume? This can't be undone.",
+        cancelLabel: "Cancel",
+        confirmLabel: "Clear",
+        danger: true,
+      });
+      if (!ok) return;
+    }
+    const before = structuredClone(values);
+    reset(clearedContent(values));
+    setMessage({ kind: "info", text: "Form cleared", undo: before });
+    setFocus("personal.fullName");
+  };
+
+  const handleUndo = (data: ResumeData) => {
+    reset(data);
+    setMessage({ kind: "success", text: "Your details are back." });
   };
 
   // handleSubmit runs validation first; the download only happens if it passes.
   const handleDownload = handleSubmit(
     async (data) => {
+      // Distinctive sample details left behind (e.g. you changed the name but not the phone)?
+      const leftovers = sampleLeftovers(data);
+      if (leftovers.length > 0) {
+        const ok = await confirm({
+          title: `Your resume still contains sample details (${leftovers.join(", ")}). Download anyway?`,
+          message: "These come from the example resume, not from you.",
+          cancelLabel: "Go back and edit",
+          confirmLabel: "Download anyway",
+        });
+        if (!ok) return;
+      }
       setDownloading(true);
       setMessage(null);
       try {
@@ -210,18 +331,12 @@ function EditorForm({ resume }: { resume: SavedResume }) {
               </Link>
               <button
                 type="button"
-                onClick={handleClear}
+                onClick={() => void handleClear()}
                 className={`${buttonBase} text-slate-600 hover:bg-slate-100`}
               >
                 Clear form
               </button>
-              <button
-                type="button"
-                onClick={handleLoadSample}
-                className={`${buttonBase} btn-light`}
-              >
-                Load sample data
-              </button>
+              <LoadSampleButton control={control} onLoad={() => void handleLoadSample()} />
               <button
                 type="button"
                 onClick={handleDownload}
@@ -239,6 +354,7 @@ function EditorForm({ resume }: { resume: SavedResume }) {
 
         <main className="mx-auto grid max-w-[1600px] gap-6 px-4 py-6 sm:px-6 lg:grid-cols-2">
           <div className="min-w-0 space-y-5">
+            <SampleBanner control={control} onClear={() => void handleClear()} />
             {showErrorSummary && (
               <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
                 Please fix the {errorCount} highlighted field{errorCount === 1 ? "" : "s"} before downloading.
@@ -247,7 +363,7 @@ function EditorForm({ resume }: { resume: SavedResume }) {
             {message && (
               <div
                 role="status"
-                className={`rounded-lg border p-3 text-sm ${
+                className={`flex flex-wrap items-center gap-3 rounded-lg border p-3 text-sm ${
                   message.kind === "success"
                     ? "border-emerald-200 bg-emerald-50 text-emerald-800"
                     : message.kind === "error"
@@ -255,14 +371,25 @@ function EditorForm({ resume }: { resume: SavedResume }) {
                       : "border-sky-200 bg-sky-50 text-sky-800"
                 }`}
               >
-                {message.text}
+                <span className="flex-1">{message.text}</span>
+                {message.undo && (
+                  <button
+                    type="button"
+                    onClick={() => handleUndo(message.undo!)}
+                    className="h-8 rounded-lg border border-current px-3 text-sm font-semibold hover:bg-white/60"
+                  >
+                    Undo
+                  </button>
+                )}
               </div>
             )}
 
             <PersonalSection />
             <SummarySection />
             <ExperienceSection />
+            <ProjectsSection />
             <EducationSection />
+            <CertificationsSection />
             <SkillsSection />
             <LanguagesSection />
             <SidebarSummarySection />
@@ -270,6 +397,7 @@ function EditorForm({ resume }: { resume: SavedResume }) {
 
           <LivePanel control={control} />
         </main>
+        {confirmDialog}
       </div>
     </FormProvider>
   );

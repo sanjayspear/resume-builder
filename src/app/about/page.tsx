@@ -22,7 +22,7 @@ const LIBRARIES = [
   { name: "Tailwind CSS", use: "Styling", licence: "MIT" },
 ];
 
-const FONTS = ["Source Sans 3", "Inter", "Roboto", "Gelasio", "Carlito"];
+const FONTS = ["Source Sans 3", "Inter", "Roboto", "Gelasio", "Carlito", "Montserrat (Modern ATS headings)"];
 
 function Card({ title, children, id }: { title: string; children: ReactNode; id?: string }) {
   return (
@@ -93,7 +93,7 @@ export default function AboutPage() {
               <dt className="text-slate-500">PDF page size</dt>
               <dd className="font-medium text-slate-900">A4</dd>
               <dt className="text-slate-500">Templates</dt>
-              <dd className="font-medium text-slate-900">Coral sidebar, Slate, Ocean, Minimal</dd>
+              <dd className="font-medium text-slate-900">Classic Sidebar, Modern ATS</dd>
             </dl>
           </Card>
 

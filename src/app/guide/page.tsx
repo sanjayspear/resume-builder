@@ -32,9 +32,9 @@ const TOC = [
 const FEATURES = [
   { title: "Live preview", text: "See the real PDF update as you type." },
   { title: "Text-based PDF", text: "Selectable text that job portals (ATS) can read." },
-  { title: "4 templates", text: "Coral sidebar, Slate, Ocean and the one-column Minimal." },
+  { title: "2 templates", text: "Classic Sidebar (two columns) and Modern ATS (one column, best for job portals)." },
   { title: "Rich text", text: "Bold, italic, underline, bullet lists and alignment." },
-  { title: "Design controls", text: "Font, text size, line spacing, logo size and colour." },
+  { title: "Design controls", text: "Font, text size, line spacing, logo size and colour (Classic Sidebar); colour (Modern ATS)." },
   { title: "Date order", text: "Jobs sorted latest-first or oldest-first automatically." },
   { title: "Company logos", text: "Upload PNG, JPG or SVG, or paste an image URL." },
   { title: "Skills & languages", text: "Skill groups with 1-10 ratings and language levels." },
@@ -120,14 +120,15 @@ export default function GuidePage() {
             {/* ---------- Catalog ---------- */}
             <Section id="catalog" title="Catalog">
               <h3 className="pt-1 text-base font-semibold text-slate-900">Templates</h3>
-              <p>A template sets the layout and the starting colour. You can switch templates at any time in the editor&apos;s Design panel without losing anything you typed.</p>
-              <ul className="grid grid-cols-2 gap-4 pt-1 sm:grid-cols-4" aria-label="Templates">
+              <p>A template only changes how the PDF looks; every template uses the same content. Switch at any time in the editor&apos;s Design panel without losing anything you typed. Each template remembers its own colour.</p>
+              <ul className="grid max-w-md grid-cols-2 gap-4 pt-1" aria-label="Templates">
                 {TEMPLATES.map((t) => (
                   <li key={t.id} className="flex flex-col">
                     <div className="aspect-[162/178] overflow-hidden rounded-xl bg-gradient-to-b from-indigo-50 via-slate-100 to-violet-50 pt-3 shadow-[inset_0_0_0_1px_rgb(15_23_42/0.06)]">
                       <ResumeThumbnail name="Your Name" title="Job title" accent={t.accent} layout={t.layout} accentHeadings />
                     </div>
                     <p className="mt-2 text-sm font-semibold text-slate-900">{t.name}</p>
+                    {t.badge && <p className="text-xs font-semibold text-emerald-700">{t.badge}</p>}
                     <p className="mb-2 text-xs text-slate-500">{t.description}</p>
                     <div className="mt-auto">
                       <UseTemplateButton template={t.id} name={t.name} />
@@ -135,6 +136,10 @@ export default function GuidePage() {
                   </li>
                 ))}
               </ul>
+              <Bullets>
+                <li><Ui>Classic Sidebar</Ui>: two columns with a coloured header, contact icons, skill rating bars and company logos. You choose the font, size, spacing and any colour.</li>
+                <li><Ui>Modern ATS</Ui>: one column in the order job portals expect (Summary, Skills, Work experience, Projects, Education, Certifications, Languages). Plain text only: no icons, logos, rating bars or sidebar summary. Montserrat headings and Inter text; choose a <Ui>Header style</Ui> (<Ui>Banner</Ui>: a colour band with white text; <Ui>Left accent</Ui>: a colour bar beside the name; <Ui>Minimal</Ui>), one of nine professional colours, and whether metrics like 40% or $140K are drawn in bold (<Ui>More options → Bold numbers</Ui>). None of these change the text that job portals read.</li>
+              </Bullets>
 
               <h3 className="pt-3 text-base font-semibold text-slate-900">Fonts</h3>
               <ul className="grid gap-2 sm:grid-cols-2" aria-label="Fonts">
@@ -178,23 +183,26 @@ export default function GuidePage() {
             <Section id="getting-started" title="Getting started">
               <p>There are three ways to start, all on the <Link href="/" className="font-semibold text-indigo-700 hover:underline">My resumes</Link> page:</p>
               <Bullets>
-                <li><Ui>Create resume</Ui> or the <Ui>New blank resume</Ui> card: an empty resume with the Coral sidebar template.</li>
-                <li><Ui>Use</Ui> under a template in <Ui>Start from a template</Ui>: an empty resume with that template.</li>
-                <li><Ui>Start from the sample resume</Ui> (shown when you have no resumes yet): a filled-in example to explore.</li>
+                <li><Ui>Create resume</Ui> or the <Ui>New resume</Ui> card: a new resume in the Classic Sidebar template.</li>
+                <li><Ui>Use</Ui> under a template in <Ui>Start from a template</Ui>: a new resume in that template.</li>
+                <li>A new resume starts filled with an example, so the preview shows what the template really looks like. A yellow banner says so; click <Ui>Clear sample data</Ui> to empty the form and enter your own details. Until you change it, the resume&apos;s card on <Ui>My resumes</Ui> shows a <Ui>Sample</Ui> badge.</li>
+                <li>Opening a resume you already saved always shows exactly what you saved; it is never filled with the example.</li>
               </Bullets>
               <p>Each option opens the editor. Fill in the form on the left; the preview on the right updates as you type.</p>
-              <Tip>Already have a resume open? <Ui>Load sample data</Ui> in the editor fills it with the example content (your design settings are kept).</Tip>
+              <Tip>Already have a resume open? <Ui>Load sample data</Ui> in the editor fills it with the example content (your design settings are kept). If the resume contains your own details, you&apos;re asked first. The button is greyed out while the example is already loaded.</Tip>
             </Section>
 
             {/* ---------- Filling in ---------- */}
             <Section id="filling-in" title="Filling in your resume">
               <p>Fields marked <Ui>*</Ui> are required. If something is missing or invalid, a red message appears under that field once you leave it.</p>
               <Bullets>
-                <li><Ui>Personal details</Ui>: full name, job title, location, phone, email and website. Email and website must look like real addresses.</li>
+                <li><Ui>Personal details</Ui>: full name, job title, location, phone, email, website and LinkedIn. Email, website and LinkedIn must look like real addresses.</li>
                 <li><Ui>Summary</Ui>: a short paragraph at the top of your resume. It supports formatting (see below).</li>
-                <li><Ui>Work experience</Ui>: add as many jobs as you like with <Ui>Add work experience</Ui>; each has dates, title, company, an optional logo and a description.</li>
+                <li><Ui>Work experience</Ui>: add as many jobs as you like with <Ui>Add work experience</Ui>; each has dates, title, company, an optional city and logo, and a description.</li>
+                <li><Ui>Projects</Ui> (optional): name, an optional link and a description. Shown only when you add one.</li>
                 <li><Ui>Education</Ui>: year, degree and institution.</li>
-                <li><Ui>Skill groups</Ui>: a group name (e.g. &quot;Communication/Protocols&quot;), a rating from 1 to 10 shown as a bar, and a list of skills.</li>
+                <li><Ui>Certifications</Ui> (optional): name, issuer and year. Shown only when you add one.</li>
+                <li><Ui>Skill groups</Ui>: a group name (e.g. &quot;Communication/Protocols&quot;), a rating from 1 to 10 (shown as a bar in Classic Sidebar), and a list of skills.</li>
                 <li>
                   <Ui>Languages</Ui>: each language with a level:{" "}
                   {LANGUAGE_LEVELS.map((l, i) => (
@@ -205,9 +213,10 @@ export default function GuidePage() {
                   ))}
                   . Adding the same language twice shows a warning.
                 </li>
-                <li><Ui>Sidebar summary</Ui>: an optional short highlight shown at the bottom of the sidebar (or under &quot;Highlights&quot; in the Minimal template).</li>
+                <li><Ui>Sidebar summary</Ui>: an optional short highlight shown at the bottom of the sidebar in Classic Sidebar. Modern ATS leaves it out so your summary isn&apos;t repeated.</li>
               </Bullets>
-              <p>Every list has <Ui>Add</Ui> and <Ui>Remove</Ui> buttons. <Ui>Clear form</Ui> empties the current resume (after asking you).</p>
+              <p>Every list has <Ui>Add</Ui> and <Ui>Remove</Ui> buttons. An entry you leave completely empty is simply skipped; a partly filled one shows what&apos;s missing.</p>
+              <p><Ui>Clear form</Ui> empties every section and leaves one empty entry in each, ready to type into. Your template and colours stay. You&apos;re asked first (unless it&apos;s still the untouched example), and <Ui>Undo</Ui> appears for about 10 seconds afterwards. While fields are empty, the preview shows grey hints like &quot;Your Name&quot;; they never appear in the downloaded PDF.</p>
             </Section>
 
             {/* ---------- Formatting ---------- */}
@@ -243,12 +252,13 @@ export default function GuidePage() {
             <Section id="design" title="Design">
               <p>The <Ui>Design</Ui> panel above the preview changes how the whole PDF looks. Each resume keeps its own design.</p>
               <Bullets>
-                <li><Ui>Template</Ui>: the layout. Switching also applies that template&apos;s colour.</li>
+                <li><Ui>Template</Ui>: pick <Ui>Classic Sidebar</Ui> or <Ui>Modern ATS</Ui>. The options below change to match: Modern ATS only offers its five colours.</li>
+                <li>Classic Sidebar&apos;s font, text size, line spacing and logo size are under <Ui>More options</Ui>.</li>
                 <li><Ui>Font</Ui>: {FONT_OPTIONS.map((f) => f.label.replace(" (default)", "")).join(", ")}.</li>
                 <li><Ui>Text size</Ui>: {FONT_SIZE_OPTIONS[0]} to {FONT_SIZE_OPTIONS[FONT_SIZE_OPTIONS.length - 1]} pt. Headings and the name grow with it.</li>
                 <li><Ui>Line spacing</Ui>: {LINE_HEIGHT_OPTIONS.map((o) => o.label).join(", ")}.</li>
                 <li><Ui>Logo size</Ui>: {LOGO_SIZE_OPTIONS.map((o) => o.label.replace(" (default)", "")).join(", ")}.</li>
-                <li><Ui>Accent colour</Ui>: one of the presets or <Ui>Custom</Ui> for any colour. It colours the name, header block and rating bars.</li>
+                <li><Ui>Accent colour</Ui>: Classic Sidebar has presets or <Ui>Custom</Ui> for any colour (name, header block, rating bars). Modern ATS has nine colours (navy, royal blue, teal, emerald, forest green, amber, burgundy, plum, slate), all dark enough for white text on the Banner and for coloured text on white.</li>
               </Bullets>
             </Section>
 
@@ -257,6 +267,7 @@ export default function GuidePage() {
               <Bullets>
                 <li>The <Ui>Live preview</Ui> shows every page of the PDF. <Ui>Open full size</Ui> opens it in a new tab.</li>
                 <li><Ui>Download PDF</Ui> checks the form first. If anything needs fixing you&apos;ll see how many fields, and each one is highlighted.</li>
+                <li>If example details are still in your resume (the example name, email, phone, LinkedIn, company or sentences), you&apos;re warned before downloading: <Ui>Go back and edit</Ui> or <Ui>Download anyway</Ui>.</li>
                 <li>The file is named after you, e.g. <em>Maya-Fernandes-Resume.pdf</em>.</li>
                 <li>You can also download straight from a card on <Ui>My resumes</Ui> with the download button.</li>
               </Bullets>
@@ -319,7 +330,7 @@ export default function GuidePage() {
                 </div>
                 <div>
                   <dt className="font-semibold text-slate-900">Will job portals be able to read my PDF?</dt>
-                  <dd>Yes. All templates produce real text, not images. For the most scanner-friendly result, use the Minimal template.</dd>
+                  <dd>Yes. All templates produce real text, not images. For the most scanner-friendly result, use the Modern ATS template.</dd>
                 </div>
                 <div>
                   <dt className="font-semibold text-slate-900">Some characters are missing in the PDF.</dt>
