@@ -51,3 +51,21 @@ export async function pdfToImages(pdf: Blob, scale = 2): Promise<string[]> {
     await loadingTask.destroy();
   }
 }
+
+/**
+ * Opens a PDF with pdf.js (in the shared background worker) and runs `read`
+ * on it, e.g. to read its text for the ATS check. Frees the document after.
+ */
+export async function withPdfDocument<T>(
+  bytes: Uint8Array,
+  read: (doc: import("pdfjs-dist").PDFDocumentProxy) => Promise<T>,
+): Promise<T> {
+  const pdfjs = await loadPdfJs();
+  sharedWorker ??= new pdfjs.PDFWorker();
+  const loadingTask = pdfjs.getDocument({ data: bytes, worker: sharedWorker });
+  try {
+    return await read(await loadingTask.promise);
+  } finally {
+    await loadingTask.destroy();
+  }
+}

@@ -63,7 +63,7 @@ test("header styles, colours and Bold numbers update the preview; the PDF keeps 
   await confirmDialog(page).getByRole("button", { name: "Download anyway" }).click();
   const file = testInfo.outputPath("modern-ats.pdf");
   await (await download).saveAs(file);
-  expect(toUnicodeProblems(await readFile(file))).toEqual([]);
+  expect(await toUnicodeProblems(await readFile(file))).toEqual([]);
   const text = (await pdfText(file)).replace(/\s+/g, " ");
   const order = ["Maya Fernandes", "Operations Manager", "maya.fernandes@example.com", "SUMMARY", "SKILLS", "WORK EXPERIENCE", "PROJECTS", "EDUCATION", "CERTIFICATIONS", "LANGUAGES"];
   let from = 0;

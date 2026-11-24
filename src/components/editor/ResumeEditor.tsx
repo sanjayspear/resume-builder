@@ -13,6 +13,7 @@ import { sampleResume } from "@/lib/sampleData";
 import { clearedContent, hasNoContent, isUntouchedSample, sampleLeftovers } from "@/lib/sampleMode";
 import { resumeSchema, type ResumeData } from "@/lib/schema";
 import { useConfirm } from "../ConfirmDialog";
+import { AtsPanel } from "../ats/AtsPanel";
 import {
   CertificationsSection,
   EducationSection,
@@ -158,6 +159,8 @@ function EditorForm({ resume }: { resume: SavedResume }) {
   });
   const { control, reset, getValues, handleSubmit, formState, subscribe, setFocus } = methods;
   const [confirmDialog, confirm] = useConfirm();
+  const [atsOpen, setAtsOpen] = useState(false);
+  const closeAts = useCallback(() => setAtsOpen(false), []);
 
   const [downloading, setDownloading] = useState(false);
   const [message, setMessage] = useState<Message | null>(null);
@@ -298,7 +301,7 @@ function EditorForm({ resume }: { resume: SavedResume }) {
       <div className="app-bg min-h-screen text-slate-900">
         <AppHeader wide />
         {/* Action bar: stays at the top while you scroll the form. */}
-        <div className="glass-bar sticky top-0 z-20">
+        <div id="editor-toolbar" className="glass-bar sticky top-0 z-20">
           <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 sm:px-6">
             <Link
               href="/"
@@ -320,6 +323,17 @@ function EditorForm({ resume }: { resume: SavedResume }) {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setAtsOpen((open) => !open)}
+                aria-expanded={atsOpen}
+                className={`${buttonBase} btn-light gap-1.5`}
+              >
+                <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9" />
+                </svg>
+                ATS check
+              </button>
               <Link
                 href="/guide"
                 onClick={flushSave}
@@ -397,6 +411,7 @@ function EditorForm({ resume }: { resume: SavedResume }) {
 
           <LivePanel control={control} />
         </main>
+        {atsOpen && <AtsPanel onClose={closeAts} />}
         {confirmDialog}
       </div>
     </FormProvider>

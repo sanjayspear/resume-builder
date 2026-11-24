@@ -74,8 +74,8 @@ describe("text in = text out", () => {
       for (const attempt of [1, 2]) {
         const { pdf, text } = await roundTrip(resume(LINES.join("\n"), template, font, header));
         assert.equal(text, LINES.join(" "), `render ${attempt}: extracted text differs`);
-        assert.deepEqual(toUnicodeProblems(pdf), [], `render ${attempt}: broken glyph-to-letter map`);
-        assert.deepEqual(multiLetterGlyphs(pdf).entries, [], `render ${attempt}: ligature glyphs present`);
+        assert.deepEqual(await toUnicodeProblems(pdf), [], `render ${attempt}: broken glyph-to-letter map`);
+        assert.deepEqual((await multiLetterGlyphs(pdf)).entries, [], `render ${attempt}: ligature glyphs present`);
       }
     });
   }
@@ -115,8 +115,8 @@ describe("display font (Montserrat: Modern ATS names and headings)", () => {
         );
         const extracted = (await extractPdf(pdf)).pages.flat();
         assert.deepEqual(extracted, lines, `render ${attempt}`);
-        assert.deepEqual(toUnicodeProblems(pdf), [], `render ${attempt}: broken glyph-to-letter map`);
-        assert.deepEqual(multiLetterGlyphs(pdf).entries, [], `render ${attempt}: ligature glyphs present`);
+        assert.deepEqual(await toUnicodeProblems(pdf), [], `render ${attempt}: broken glyph-to-letter map`);
+        assert.deepEqual((await multiLetterGlyphs(pdf)).entries, [], `render ${attempt}: ligature glyphs present`);
       }
     });
   }

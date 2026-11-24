@@ -43,7 +43,7 @@ for (const [template, font] of cases) {
       assert.match(text, new RegExp(`\\b${word}\\b`), `"${word}" missing from extracted text`);
     }
 
-    const { cmaps, entries } = multiLetterGlyphs(pdf);
+    const { cmaps, entries } = await multiLetterGlyphs(pdf);
     assert.ok(cmaps > 0, "no ToUnicode maps found; the check below would be meaningless");
     assert.deepEqual(entries, [], `glyphs that stand for several letters (ligatures): ${entries.join(", ")}`);
   });

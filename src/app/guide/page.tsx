@@ -263,6 +263,16 @@ export default function GuidePage() {
             </Section>
 
             {/* ---------- Preview & download ---------- */}
+            <Section id="ats-check" title="ATS check">
+              <p>Click <Ui>ATS check</Ui> in the editor to see how a resume scanner (ATS) reads your resume. Everything is checked on your device; nothing is uploaded.</p>
+              <Bullets>
+                <li><Ui>Readability</Ui>: builds the real PDF and reads it back: every word must come out exactly as typed, in the right order, with standard section headings and no text in images. Classic Sidebar gets a warning because two-column layouts can be read out of order; <Ui>Switch to Modern ATS</Ui> fixes that in one click.</li>
+                <li><Ui>Structure</Ui>: contact details, complete jobs, one date style (e.g. not &quot;Sept 2017&quot; next to &quot;Oct 2022&quot;), most recent job first, 1–2 pages, a 40–120 word summary, and the file name Download will use.</li>
+                <li>Each problem says why it matters, and <Ui>Go to field</Ui> takes you to the field to fix. The checks update as you type.</li>
+                <li>No tool can predict every company&apos;s ATS, so there&apos;s no score: just clear checks for the most common reasons resumes get filtered out.</li>
+              </Bullets>
+            </Section>
+
             <Section id="preview-download" title="Preview & download">
               <Bullets>
                 <li>The <Ui>Live preview</Ui> shows every page of the PDF. <Ui>Open full size</Ui> opens it in a new tab.</li>

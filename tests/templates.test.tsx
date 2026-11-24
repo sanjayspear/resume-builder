@@ -45,7 +45,7 @@ for (const template of ["classic", "modern-ats"] as const) {
       const all = text.pages.flat().join("\n");
       for (const word of KEYWORDS) assert.match(all, new RegExp(`\\b${word}\\b`), `"${word}" not found`);
       assert.doesNotMatch(all, /\bSofware\b|\beficiency\b|\bafiliated\b/, "a word lost letters");
-      assert.deepEqual(multiLetterGlyphs(pdf).entries, [], "PDF still contains ligature glyphs");
+      assert.deepEqual((await multiLetterGlyphs(pdf)).entries, [], "PDF still contains ligature glyphs");
     });
 
     test("all section headings are present", async () => {

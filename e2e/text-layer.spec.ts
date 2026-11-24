@@ -37,7 +37,7 @@ for (const template of ["modern-ats", "classic"] as const) {
     const file = testInfo.outputPath("text-layer.pdf");
     await (await download).saveAs(file);
 
-    expect(toUnicodeProblems(await readFile(file)), "glyph-to-letter map").toEqual([]);
+    expect(await toUnicodeProblems(await readFile(file)), "glyph-to-letter map").toEqual([]);
     expect((await pdfText(file)).replace(/\s+/g, " ")).toContain(FINAL);
   });
 }

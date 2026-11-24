@@ -20,7 +20,7 @@ export const sampleResume: ResumeData = {
     linkedin: "linkedin.com/in/maya-fernandes-sample",
   },
   summary: textToDoc(
-    "Operations Manager with 6+ years of experience running warehouse, inventory and customer service teams. Cut stock-holding costs by 18% while raising order accuracy to 99.4%. Skilled in demand planning, vendor negotiation and coaching.",
+    "Operations Manager with 6+ years of experience running warehouse, inventory and customer service teams. Cut stock-holding costs by 18% while raising order accuracy to 99.4%. Skilled in demand planning, vendor negotiation and coaching. Known for calm, practical leadership through peak season and for turning front-line ideas into lasting process improvements.",
   ),
   experienceOrder: "newest",
   experience: [
