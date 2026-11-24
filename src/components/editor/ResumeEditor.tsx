@@ -411,7 +411,7 @@ function EditorForm({ resume }: { resume: SavedResume }) {
 
           <LivePanel control={control} />
         </main>
-        {atsOpen && <AtsPanel onClose={closeAts} />}
+        {atsOpen && <AtsPanel resumeId={resumeId} onClose={closeAts} />}
         {confirmDialog}
       </div>
     </FormProvider>

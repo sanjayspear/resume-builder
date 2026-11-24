@@ -19,7 +19,47 @@ export type SavedResume = {
   createdAt: number; // milliseconds since 1970 (Date.now())
   updatedAt: number;
   data: ResumeData;
+  /** ATS check inputs for this resume (kept with it, so backups include them). */
+  ats: AtsState;
 };
+
+/**
+ * What the ATS check remembers per resume: the job description and target
+ * title you pasted, your keyword edits, and tips you dismissed. Stored only
+ * in this browser (and in your backup file); never sent anywhere.
+ */
+export type AtsState = {
+  jobDescription: string;
+  targetTitle: string;
+  /** Keyword keys you removed from the list. */
+  removedKeywords: string[];
+  /** Keywords you added yourself, as typed. */
+  addedKeywords: string[];
+  /** Content tips you dismissed (Phase 3). */
+  dismissedTips: string[];
+};
+
+export const emptyAtsState = (): AtsState => ({
+  jobDescription: "",
+  targetTitle: "",
+  removedKeywords: [],
+  addedKeywords: [],
+  dismissedTips: [],
+});
+
+/** Safe to load from any saved or imported value (older saves have none). */
+export function normalizeAtsState(value: unknown): AtsState {
+  const v = (value && typeof value === "object" ? value : {}) as Partial<Record<keyof AtsState, unknown>>;
+  const str = (x: unknown) => (typeof x === "string" ? x : "");
+  const list = (x: unknown) => (Array.isArray(x) ? x.filter((i): i is string => typeof i === "string") : []);
+  return {
+    jobDescription: str(v.jobDescription),
+    targetTitle: str(v.targetTitle),
+    removedKeywords: list(v.removedKeywords),
+    addedKeywords: list(v.addedKeywords),
+    dismissedTips: list(v.dismissedTips),
+  };
+}
 
 export type Library = {
   version: 2;
@@ -127,12 +167,23 @@ function normalizeSavedResume(value: unknown): SavedResume | null {
     createdAt: typeof v.createdAt === "number" ? v.createdAt : now,
     updatedAt: typeof v.updatedAt === "number" ? v.updatedAt : now,
     data: normalizeResumeData(v.data),
+    ats: normalizeAtsState(v.ats),
   };
 }
 
 export function createResume(data: ResumeData = emptyResume(), customName = ""): SavedResume {
   const now = Date.now();
-  return { id: newId(), customName, createdAt: now, updatedAt: now, data };
+  return { id: newId(), customName, createdAt: now, updatedAt: now, data, ats: emptyAtsState() };
+}
+
+/** Changes this resume's ATS check inputs (job description, keyword edits…). */
+export function updateAtsState(library: Library, id: string, patch: Partial<AtsState>): Library {
+  const existing = findResume(library, id);
+  if (!existing) return library;
+  const ats = { ...existing.ats, ...patch };
+  if (JSON.stringify(ats) === JSON.stringify(existing.ats)) return library;
+  const updated: SavedResume = { ...existing, ats, updatedAt: Date.now() };
+  return { ...library, resumes: library.resumes.map((r) => (r.id === id ? updated : r)) };
 }
 
 /** Newest first. */
@@ -175,7 +226,7 @@ export function renameResume(library: Library, id: string, customName: string): 
 export function duplicateResume(library: Library, id: string): { library: Library; copy: SavedResume | null } {
   const source = findResume(library, id);
   if (!source) return { library, copy: null };
-  const copy = createResume(structuredClone(source.data), `Copy of ${displayName(source)}`);
+  const copy = { ...createResume(structuredClone(source.data), `Copy of ${displayName(source)}`), ats: structuredClone(source.ats) };
   return { library: addResume(library, copy), copy };
 }
 

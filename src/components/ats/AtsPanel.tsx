@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { goToField } from "@/lib/ats/goToField";
+import { extractKeywords, jobMatchChecks, jobMatchSummary, matchKeywords } from "@/lib/ats/keywords";
 import { readabilityChecks, type PdfReading } from "@/lib/ats/readability";
 import { readPdfForAts } from "@/lib/ats/readPdfForAts";
 import { structureChecks } from "@/lib/ats/structure";
 import { summaryLine } from "@/lib/ats/summary";
 import type { Check, CheckStatus } from "@/lib/ats/types";
+import { emptyAtsState, findResume, updateAtsState, type AtsState } from "@/lib/library";
+import { commitLibrary, useLibrary } from "@/lib/libraryStore";
 import type { ResumeData } from "@/lib/schema";
+import { JobMatch } from "./JobMatch";
 
 /** Text-only checks re-run this long after typing pauses. */
 const TEXT_DELAY_MS = 500;
@@ -72,7 +76,7 @@ function useSettled<T>(value: T, ms: number): T {
  * entirely in the browser; nothing about the resume is sent anywhere.
  * Only mounted while open, so it costs nothing while closed.
  */
-export function AtsPanel({ onClose }: { onClose: () => void }) {
+export function AtsPanel({ resumeId, onClose }: { resumeId: string; onClose: () => void }) {
   const { control, setValue } = useFormContext<ResumeData>();
   const values = useWatch({ control }) as ResumeData;
   const json = JSON.stringify(values);
@@ -111,9 +115,32 @@ export function AtsPanel({ onClose }: { onClose: () => void }) {
     () => structureChecks(JSON.parse(textJson) as ResumeData, { pageCount: reading?.result.extracted.pageCount }),
     [textJson, reading],
   );
+  // Job match: inputs saved with this resume (job description, keyword edits).
+  const library = useLibrary();
+  const ats = (library && findResume(library, resumeId)?.ats) || emptyAtsState();
+  const saveAts = useCallback(
+    (patch: Partial<AtsState>) => commitLibrary((lib) => updateAtsState(lib, resumeId, patch)),
+    [resumeId],
+  );
+  const keywordResults = useMemo(() => {
+    const keywords = extractKeywords(ats.jobDescription, { removed: ats.removedKeywords, added: ats.addedKeywords });
+    return matchKeywords(JSON.parse(textJson) as ResumeData, keywords);
+  }, [ats.jobDescription, ats.removedKeywords, ats.addedKeywords, textJson]);
+  const jobChecks = useMemo(
+    () =>
+      ats.jobDescription.trim() || ats.targetTitle.trim()
+        ? jobMatchChecks(JSON.parse(textJson) as ResumeData, keywordResults, ats.jobDescription, ats.targetTitle)
+        : [],
+    [textJson, keywordResults, ats.jobDescription, ats.targetTitle],
+  );
+
   const checking = !reading || reading.json !== json;
   // "Readability: Passed · Structure: 1 warning - no LinkedIn"
-  const line = [summaryLine("Readability", readability, { pending: !reading }), summaryLine("Structure", structure)].join(" · ");
+  const line = [
+    summaryLine("Readability", readability, { pending: !reading }),
+    summaryLine("Structure", structure),
+    jobMatchSummary(keywordResults, ats.jobDescription),
+  ].join(" · ");
 
   useEffect(() => {
     headingRef.current?.focus();
@@ -207,9 +234,19 @@ export function AtsPanel({ onClose }: { onClose: () => void }) {
             />
             <CheckGroup title="Structure" checks={structure} onJump={jump} onSwitch={switchToModernAts} />
           </>
+        ) : tab === "job-match" ? (
+          <JobMatch
+            key={resumeId}
+            ats={ats}
+            onChange={saveAts}
+            results={keywordResults}
+            checks={jobChecks}
+            renderCheck={(c) => <CheckItem key={c.id} check={c} onJump={jump} onSwitch={switchToModernAts} />}
+            onJump={jump}
+          />
         ) : (
           <p className="rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
-            Coming in the next step: {tab === "job-match" ? "compare your resume with a job description." : "tips to strengthen your bullets and wording."}
+            Coming in the next step: tips to strengthen your bullets and wording.
           </p>
         )}
       </div>

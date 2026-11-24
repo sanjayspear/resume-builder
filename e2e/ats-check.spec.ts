@@ -23,19 +23,19 @@ async function openAtsCheck(page: Page) {
 test("Modern ATS passes; Classic Sidebar warns about two columns and can switch", async ({ page }) => {
   await openResume(page, "Modern ATS");
   await openAtsCheck(page);
-  await expect(summary(page)).toHaveText("Readability: Passed · Structure: Passed");
+  await expect(summary(page)).toContainText("Readability: Passed · Structure: Passed · Job match:");
   await expect(panel(page)).toContainText("No tool can predict every company's ATS.");
   await expect(page.getByTestId("ats-check-words")).toHaveAttribute("data-status", "pass");
 
   await page.getByRole("button", { name: "Close ATS check" }).click();
   await page.getByTestId("template-option-classic").click();
   await openAtsCheck(page);
-  await expect(summary(page)).toHaveText("Readability: 1 warning - two-column layout · Structure: Passed");
+  await expect(summary(page)).toContainText("Readability: 1 warning - two-column layout · Structure: Passed · Job match:");
   const order = page.getByTestId("ats-check-reading-order");
   await expect(order).toContainText("Two-column layouts can be read out of order by some ATS. Use Modern ATS when applying through job portals.");
 
   await order.getByRole("button", { name: "Switch to Modern ATS" }).click();
-  await expect(summary(page)).toHaveText("Readability: Passed · Structure: Passed");
+  await expect(summary(page)).toContainText("Readability: Passed · Structure: Passed · Job match:");
   await expect(page.getByRole("radio", { name: /Modern ATS/ })).toBeChecked();
 });
 
@@ -59,11 +59,11 @@ test("on desktop the panel starts below the toolbar, so the toolbar stays usable
 test("the checks follow the resume as you edit, and Go to field takes you to the field", async ({ page }) => {
   await openResume(page, "Modern ATS");
   await openAtsCheck(page);
-  await expect(summary(page)).toHaveText("Readability: Passed · Structure: Passed");
+  await expect(summary(page)).toContainText("Readability: Passed · Structure: Passed · Job match:");
 
   // Remove the LinkedIn link: a warning appears that points at that field.
   await field(page, "personal.linkedin").fill("");
-  await expect(summary(page)).toHaveText("Readability: Passed · Structure: 1 warning - no LinkedIn");
+  await expect(summary(page)).toContainText("Readability: Passed · Structure: 1 warning - no LinkedIn · Job match:");
   const linkedin = page.getByTestId("ats-check-linkedin");
   await expect(linkedin).toHaveAttribute("data-status", "warn");
   await expect(linkedin).toContainText("Why it matters:");

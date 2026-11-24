@@ -1,0 +1,57 @@
+{
+  "_about": "Skills, tools and certifications the ATS check looks for in job descriptions, by profession. Edit freely: one entry per skill, written the way it should be shown. Matching ignores case and simple word forms (test/tests/testing). Equivalent names (CI/CD = continuous integration) go in synonyms.json.",
+  "software and QA": [
+    "Playwright", "Selenium", "Selenium WebDriver", "Cypress", "Appium", "Puppeteer", "WebdriverIO", "TestNG", "JUnit", "pytest", "Mocha", "Jest",
+    "Cucumber", "BDD", "TDD", "Karate", "Postman", "REST Assured", "REST API", "GraphQL", "SOAP", "API testing", "UI testing", "test automation",
+    "automation framework", "Page Object Model", "regression testing", "performance testing", "load testing", "JMeter", "Gatling", "k6",
+    "manual testing", "exploratory testing", "test plans", "test cases", "defect tracking", "quality assurance", "cross-browser testing",
+    "mobile testing", "accessibility testing", "security testing", "unit testing", "integration testing", "end-to-end testing",
+    "Java", "JavaScript", "TypeScript", "Python", "C#", "C++", "Go", "Kotlin", "Swift", "Ruby", "PHP", "SQL", "NoSQL", "HTML", "CSS",
+    "React", "Angular", "Vue", "Node.js", ".NET", "Spring Boot", "Django", "Flask",
+    "Git", "GitHub", "GitLab", "Bitbucket", "Jenkins", "GitHub Actions", "Azure DevOps", "CircleCI", "Harness", "CI/CD", "DevOps",
+    "Docker", "Kubernetes", "Terraform", "AWS", "Azure", "Google Cloud", "microservices", "Linux", "Bash",
+    "Jira", "Confluence", "TestRail", "Zephyr", "ALM", "BrowserStack", "LambdaTest", "Sauce Labs",
+    "PostgreSQL", "MySQL", "MongoDB", "Oracle", "Kafka", "machine learning", "data analysis", "agile", "Scrum", "Kanban", "ISTQB"
+  ],
+  "operations and supply chain": [
+    "inventory management", "inventory control", "demand planning", "demand forecasting", "forecasting", "supply chain", "logistics",
+    "warehouse management", "WMS", "ERP", "SAP", "Oracle NetSuite", "procurement", "purchasing", "vendor management", "vendor negotiation",
+    "supplier management", "cycle counting", "slotting", "order fulfillment", "distribution", "transportation", "freight", "shipping",
+    "receiving", "returns", "lean", "Six Sigma", "Kaizen", "5S", "continuous improvement", "process improvement", "root cause analysis",
+    "KPIs", "budgeting", "P&L", "cost reduction", "safety compliance", "OSHA", "health and safety", "quality control", "operations management",
+    "capacity planning", "scheduling", "workforce planning", "team leadership", "staff training", "coaching", "CSCP", "APICS", "PMP"
+  ],
+  "sales and customer success": [
+    "B2B", "B2C", "SaaS", "account management", "business development", "lead generation", "prospecting", "cold calling", "pipeline management",
+    "negotiation", "closing", "quota", "CRM", "Salesforce", "HubSpot", "customer success", "customer retention", "upselling", "cross-selling",
+    "key accounts", "territory management", "sales forecasting", "customer service", "Zendesk"
+  ],
+  "marketing": [
+    "digital marketing", "SEO", "SEM", "PPC", "Google Ads", "Google Analytics", "content marketing", "copywriting", "social media",
+    "email marketing", "marketing automation", "brand management", "campaign management", "market research", "A/B testing",
+    "conversion rate optimization", "product marketing", "public relations", "Adobe Creative Suite", "Figma"
+  ],
+  "finance and accounting": [
+    "financial analysis", "financial modeling", "financial reporting", "budget management", "forecasting", "variance analysis", "accounts payable",
+    "accounts receivable", "general ledger", "reconciliation", "month-end close", "audit", "tax", "GAAP", "IFRS", "Excel", "Power BI", "Tableau",
+    "QuickBooks", "Xero", "SAP FICO", "CPA", "CFA", "ACCA", "risk management", "compliance", "payroll"
+  ],
+  "HR and recruiting": [
+    "recruiting", "talent acquisition", "sourcing", "onboarding", "employee relations", "performance management", "compensation and benefits",
+    "HRIS", "Workday", "SuccessFactors", "learning and development", "succession planning", "employee engagement", "labor law",
+    "diversity and inclusion", "SHRM", "CIPD"
+  ],
+  "healthcare": [
+    "patient care", "electronic health records", "EHR", "EMR", "Epic", "Cerner", "HIPAA", "clinical documentation", "medication administration",
+    "triage", "BLS", "ACLS", "CPR", "infection control", "care planning", "patient education", "phlebotomy", "vital signs", "ICU", "RN", "LPN"
+  ],
+  "project and product management": [
+    "project management", "program management", "product management", "stakeholder management", "roadmap", "requirements gathering",
+    "user stories", "risk management", "change management", "resource planning", "PRINCE2", "PMP", "Microsoft Project", "Asana", "Trello",
+    "cross-functional collaboration"
+  ],
+  "general": [
+    "Microsoft Office", "Excel", "PowerPoint", "Word", "Google Workspace", "communication", "presentation skills", "problem solving",
+    "data entry", "reporting", "documentation", "training", "mentoring", "people management"
+  ]
+}

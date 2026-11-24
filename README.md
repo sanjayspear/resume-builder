@@ -19,7 +19,7 @@ Build a clean, professional resume in your browser and download it as a **text-b
 - **Skill groups** with 1-10 rating bars, and **languages** with proficiency levels.
 - **Starts with an example**: a new resume is filled with sample content so the preview shows the template properly. A banner offers **Clear sample data**, cards show a **Sample** badge, and downloading warns if example details (name, email, phone…) are still in the resume.
 - **Clear form** with a confirmation and **Undo**; grey hints in the preview (never in the PDF) while fields are empty.
-- **ATS check** (in the editor): reads the real PDF back the way a resume scanner does and checks readability (every word, reading order, headings, no text in images) and structure (contact details, complete jobs, consistent dates, length, summary). Runs entirely in the browser; nothing is uploaded.
+- **ATS check** (in the editor): reads the real PDF back the way a resume scanner does and checks readability (every word, reading order, headings, no text in images) and structure (contact details, complete jobs, consistent dates, length, summary), plus **job match** against a pasted job description (keywords found and missing, synonyms and word forms, job title, over-use). Runs entirely in the browser; nothing is uploaded. The skills dictionary, synonyms and filler words are editable JSON files in `src/data/ats/`.
 - **Many resumes**: search, sort, copy, rename, delete; everything auto-saves.
 - **Backup file**: export all resumes to one file and import it on any browser or computer.
 - Clear validation messages, keyboard-friendly menus and dialogs, and a built-in **user guide** (`/guide`).

@@ -1,0 +1,20 @@
+{
+  "_about": "Words that are never shown as keywords on their own: job-ad filler and everyday English. A phrase made only of these words is skipped too. Edit freely.",
+  "words": [
+    "team", "teams", "role", "roles", "looking", "opportunity", "opportunities", "candidate", "candidates", "company", "companies", "job", "jobs",
+    "position", "positions", "ideal", "join", "joining", "work", "working", "works", "experience", "experienced", "years", "year", "ability", "able",
+    "skills", "skill", "strong", "excellent", "good", "great", "proven", "track", "record", "plus", "preferred", "required", "requirements",
+    "responsibilities", "responsible", "duties", "including", "include", "includes", "etc", "related", "relevant", "knowledge", "understanding",
+    "familiarity", "familiar", "environment", "fast", "paced", "fast-paced", "dynamic", "passionate", "motivated", "self", "self-starter",
+    "detail", "oriented", "detail-oriented", "minimum", "least", "degree", "bachelor", "bachelors", "equivalent", "apply", "benefits", "salary",
+    "culture", "mission", "values", "help", "helping", "support", "supporting", "ensure", "ensuring", "make", "making", "new", "day", "daily",
+    "across", "within", "well", "highly", "high", "level", "levels", "multiple", "various", "key", "best", "using", "use", "used", "based",
+    "also", "will", "would", "should", "must", "can", "may", "need", "needs", "want", "wants", "us", "our", "we", "you", "your", "they", "their",
+    "the", "a", "an", "and", "or", "of", "to", "in", "on", "for", "with", "by", "at", "from", "as", "is", "are", "be", "been", "being", "this",
+    "that", "these", "those", "it", "its", "into", "about", "over", "under", "than", "then", "who", "what", "which", "when", "where", "how",
+    "all", "any", "each", "other", "such", "more", "most", "very", "own", "up", "out", "not", "no", "yes", "if", "so", "do", "does", "have",
+    "has", "had", "get", "including", "like", "per", "via", "within", "while", "both", "both", "either", "role's", "we're", "you'll", "you're",
+    "e.g", "i.e", "time", "full", "part", "remote", "hybrid", "office", "location", "based", "opening", "hiring", "employer", "equal",
+    "people", "person", "things", "way", "ways", "part", "ensure", "deliver", "delivering", "drive", "driving", "own", "ownership"
+  ]
+}
