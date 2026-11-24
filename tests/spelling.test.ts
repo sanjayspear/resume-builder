@@ -10,7 +10,7 @@ import { textToDoc } from "@/lib/richText";
 import { sampleResume } from "@/lib/sampleData";
 import type { ResumeData } from "@/lib/schema";
 import { createChecker } from "@/lib/spell/checker";
-import { spellTargets } from "@/lib/spell/targets";
+import { spellTargets, wordsToCheck } from "@/lib/spell/targets";
 import { qaResume } from "./fixtures/qaResume";
 
 // The same dictionary files the app serves (copied into public/ by "postinstall").
@@ -81,5 +81,24 @@ describe("correct text is never flagged", () => {
   test("the sample resume and the QA resume have no spelling tips", () => {
     assert.deepEqual(spelling(sampleResume), []);
     assert.deepEqual(spelling(qaResume()), []);
+  });
+});
+
+describe("underlines: word positions and suggestion order", () => {
+  test("positions point exactly at each word, including hyphen parts", () => {
+    const text = "We recieved cross-functionl help.";
+    const found = wordsToCheck(text, new Set());
+    for (const w of found) assert.equal(text.slice(w.start, w.end), w.word);
+    assert.deepEqual(found.map((w) => w.word), ["We", "recieved", "cross", "functionl", "help"]);
+  });
+
+  test("names in mid-sentence and known terms are not candidates", () => {
+    assert.deepEqual(wordsToCheck("Built tests at Quillmere with karate.", new Set(["karate"])).map((w) => w.word), ["Built", "tests", "at", "with"]);
+  });
+
+  test("ordinary words are suggested before proper names, swapped letters are found", () => {
+    assert.equal(checker.check("Senoir").suggestions[0], "Senior");
+    assert.equal(checker.check("teh").suggestions[0], "the");
+    assert.equal(checker.check("adn").suggestions[0], "and");
   });
 });

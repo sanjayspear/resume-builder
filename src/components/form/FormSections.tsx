@@ -18,6 +18,7 @@ import {
   emptySkillGroup,
   type ResumeData,
 } from "@/lib/schema";
+import { useSpellField } from "../spell/useSpellField";
 import { AddButton, EntryCard, ErrorText, Section, TextAreaField, TextField, toId } from "../ui";
 import { LogoField } from "./LogoField";
 import { RichTextField } from "./RichTextField";
@@ -31,11 +32,12 @@ export function PersonalSection() {
     formState: { errors },
   } = useFormContext<ResumeData>();
   const e = errors.personal;
+  const jobTitleSpell = useSpellField("personal.jobTitle");
   return (
     <Section title="Personal details">
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField label="Full name *" error={e?.fullName} autoComplete="name" {...register("personal.fullName")} />
-        <TextField label="Job title *" error={e?.jobTitle} autoComplete="organization-title" {...register("personal.jobTitle")} />
+        <TextField label="Job title *" error={e?.jobTitle} autoComplete="organization-title" {...register("personal.jobTitle")} {...jobTitleSpell} />
         <TextField label="Location" error={e?.location} placeholder="City, State" {...register("personal.location")} />
         <TextField label="Phone" error={e?.phone} type="tel" autoComplete="tel" {...register("personal.phone")} />
         <TextField label="Email *" error={e?.email} type="email" autoComplete="email" {...register("personal.email")} />
@@ -69,6 +71,7 @@ function ExperienceEntry({ index, onRemove }: { index: number; onRemove: () => v
   const isCurrent = useWatch({ control, name: `${path}.isCurrent` });
   const jobTitle = useWatch({ control, name: `${path}.jobTitle` });
   const checkboxId = toId(`${path}.isCurrent`);
+  const titleSpell = useSpellField(`${path}.jobTitle`);
 
   return (
     <EntryCard
@@ -109,7 +112,7 @@ function ExperienceEntry({ index, onRemove }: { index: number; onRemove: () => v
             I currently work here (Present)
           </label>
         </div>
-        <TextField label="Job title *" error={e?.jobTitle} {...register(`${path}.jobTitle`)} />
+        <TextField label="Job title *" error={e?.jobTitle} {...register(`${path}.jobTitle`)} {...titleSpell} />
         <TextField label="Company *" error={e?.company} {...register(`${path}.company`)} />
         <TextField label="City" error={e?.location} placeholder="e.g. Austin, TX" {...register(`${path}.location`)} />
       </div>
@@ -441,6 +444,7 @@ export function SidebarSummarySection() {
     register,
     formState: { errors },
   } = useFormContext<ResumeData>();
+  const spell = useSpellField("sidebarSummary", { multiline: true });
   return (
     <Section
       title="Sidebar summary"
@@ -452,6 +456,7 @@ export function SidebarSummarySection() {
         rows={3}
         hint="Optional, up to 400 characters."
         {...register("sidebarSummary")}
+        {...spell}
       />
     </Section>
   );

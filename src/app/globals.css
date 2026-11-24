@@ -200,3 +200,14 @@ body {
     box-shadow: 0 0 0 0 transparent;
   }
 }
+
+/* Spelling mistakes (the app's own spell check): a red wavy underline. */
+.spell-error {
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: #dc2626;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  text-decoration-skip-ink: none;
+  cursor: pointer;
+}

@@ -14,6 +14,7 @@ import { clearedContent, hasNoContent, isUntouchedSample, sampleLeftovers } from
 import { resumeSchema, type ResumeData } from "@/lib/schema";
 import { useConfirm } from "../ConfirmDialog";
 import { AtsPanel } from "../ats/AtsPanel";
+import { SpellcheckProvider } from "../spell/SpellcheckProvider";
 import {
   CertificationsSection,
   EducationSection,
@@ -298,122 +299,124 @@ function EditorForm({ resume }: { resume: SavedResume }) {
 
   return (
     <FormProvider {...methods}>
-      <div className="app-bg min-h-screen text-slate-900">
-        <AppHeader wide />
-        {/* Action bar: stays at the top while you scroll the form. */}
-        <div id="editor-toolbar" className="glass-bar sticky top-0 z-20">
-          <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 sm:px-6">
-            <Link
-              href="/"
-              onClick={flushSave}
-              aria-label="Back to My resumes"
-              title="Back to My resumes"
-              className="btn-light flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-700"
-            >
-              <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-            </Link>
-            <div className="mr-auto min-w-0">
-              <h1 className="truncate text-lg font-bold leading-tight tracking-tight" data-testid="current-resume">
-                {displayName(resume)}
-              </h1>
-              <p className="truncate text-xs text-slate-500" data-testid="current-template">
-                {templateName} template<span className="hidden sm:inline"> · changes save automatically</span>
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setAtsOpen((open) => !open)}
-                aria-expanded={atsOpen}
-                className={`${buttonBase} btn-light gap-1.5`}
-              >
-                <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9" />
-                </svg>
-                ATS check
-              </button>
+      <SpellcheckProvider resumeId={resumeId}>
+        <div className="app-bg min-h-screen text-slate-900">
+          <AppHeader wide />
+          {/* Action bar: stays at the top while you scroll the form. */}
+          <div id="editor-toolbar" className="glass-bar sticky top-0 z-20">
+            <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 sm:px-6">
               <Link
-                href="/guide"
+                href="/"
                 onClick={flushSave}
-                aria-label="Help: open the user guide"
-                title="User guide"
-                className={`${buttonBase} btn-light w-9 px-0 text-slate-700`}
+                aria-label="Back to My resumes"
+                title="Back to My resumes"
+                className="btn-light flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-700"
               >
-                ?
-              </Link>
-              <button
-                type="button"
-                onClick={() => void handleClear()}
-                className={`${buttonBase} text-slate-600 hover:bg-slate-100`}
-              >
-                Clear form
-              </button>
-              <LoadSampleButton control={control} onLoad={() => void handleLoadSample()} />
-              <button
-                type="button"
-                onClick={handleDownload}
-                disabled={downloading}
-                className={`${buttonBase} btn-primary gap-1.5`}
-              >
-                <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" />
+                <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 18l-6-6 6-6" />
                 </svg>
-                {downloading ? "Preparing PDF…" : "Download PDF"}
-              </button>
+              </Link>
+              <div className="mr-auto min-w-0">
+                <h1 className="truncate text-lg font-bold leading-tight tracking-tight" data-testid="current-resume">
+                  {displayName(resume)}
+                </h1>
+                <p className="truncate text-xs text-slate-500" data-testid="current-template">
+                  {templateName} template<span className="hidden sm:inline"> · changes save automatically</span>
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAtsOpen((open) => !open)}
+                  aria-expanded={atsOpen}
+                  className={`${buttonBase} btn-light gap-1.5`}
+                >
+                  <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9" />
+                  </svg>
+                  ATS check
+                </button>
+                <Link
+                  href="/guide"
+                  onClick={flushSave}
+                  aria-label="Help: open the user guide"
+                  title="User guide"
+                  className={`${buttonBase} btn-light w-9 px-0 text-slate-700`}
+                >
+                  ?
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => void handleClear()}
+                  className={`${buttonBase} text-slate-600 hover:bg-slate-100`}
+                >
+                  Clear form
+                </button>
+                <LoadSampleButton control={control} onLoad={() => void handleLoadSample()} />
+                <button
+                  type="button"
+                  onClick={handleDownload}
+                  disabled={downloading}
+                  className={`${buttonBase} btn-primary gap-1.5`}
+                >
+                  <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" />
+                  </svg>
+                  {downloading ? "Preparing PDF…" : "Download PDF"}
+                </button>
+              </div>
             </div>
           </div>
+
+          <main className="mx-auto grid max-w-[1600px] gap-6 px-4 py-6 sm:px-6 lg:grid-cols-2">
+            <div className="min-w-0 space-y-5">
+              <SampleBanner control={control} onClear={() => void handleClear()} />
+              {showErrorSummary && (
+                <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                  Please fix the {errorCount} highlighted field{errorCount === 1 ? "" : "s"} before downloading.
+                </div>
+              )}
+              {message && (
+                <div
+                  role="status"
+                  className={`flex flex-wrap items-center gap-3 rounded-lg border p-3 text-sm ${
+                    message.kind === "success"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                      : message.kind === "error"
+                        ? "border-red-200 bg-red-50 text-red-800"
+                        : "border-sky-200 bg-sky-50 text-sky-800"
+                  }`}
+                >
+                  <span className="flex-1">{message.text}</span>
+                  {message.undo && (
+                    <button
+                      type="button"
+                      onClick={() => handleUndo(message.undo!)}
+                      className="h-8 rounded-lg border border-current px-3 text-sm font-semibold hover:bg-white/60"
+                    >
+                      Undo
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <PersonalSection />
+              <SummarySection />
+              <ExperienceSection />
+              <ProjectsSection />
+              <EducationSection />
+              <CertificationsSection />
+              <SkillsSection />
+              <LanguagesSection />
+              <SidebarSummarySection />
+            </div>
+
+            <LivePanel control={control} />
+          </main>
+          {atsOpen && <AtsPanel resumeId={resumeId} onClose={closeAts} />}
+          {confirmDialog}
         </div>
-
-        <main className="mx-auto grid max-w-[1600px] gap-6 px-4 py-6 sm:px-6 lg:grid-cols-2">
-          <div className="min-w-0 space-y-5">
-            <SampleBanner control={control} onClear={() => void handleClear()} />
-            {showErrorSummary && (
-              <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-                Please fix the {errorCount} highlighted field{errorCount === 1 ? "" : "s"} before downloading.
-              </div>
-            )}
-            {message && (
-              <div
-                role="status"
-                className={`flex flex-wrap items-center gap-3 rounded-lg border p-3 text-sm ${
-                  message.kind === "success"
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                    : message.kind === "error"
-                      ? "border-red-200 bg-red-50 text-red-800"
-                      : "border-sky-200 bg-sky-50 text-sky-800"
-                }`}
-              >
-                <span className="flex-1">{message.text}</span>
-                {message.undo && (
-                  <button
-                    type="button"
-                    onClick={() => handleUndo(message.undo!)}
-                    className="h-8 rounded-lg border border-current px-3 text-sm font-semibold hover:bg-white/60"
-                  >
-                    Undo
-                  </button>
-                )}
-              </div>
-            )}
-
-            <PersonalSection />
-            <SummarySection />
-            <ExperienceSection />
-            <ProjectsSection />
-            <EducationSection />
-            <CertificationsSection />
-            <SkillsSection />
-            <LanguagesSection />
-            <SidebarSummarySection />
-          </div>
-
-          <LivePanel control={control} />
-        </main>
-        {atsOpen && <AtsPanel resumeId={resumeId} onClose={closeAts} />}
-        {confirmDialog}
-      </div>
+      </SpellcheckProvider>
     </FormProvider>
   );
 }

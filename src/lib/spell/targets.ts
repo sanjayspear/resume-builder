@@ -42,27 +42,40 @@ export function knownTerms(data: ResumeData): Set<string> {
 const docText = (doc: RichDoc) =>
   flattenDoc(doc).map((u) => u.inlines.map((i) => (i.type === "text" ? i.text : " ")).join(""));
 
+export type FoundWord = { word: string; start: number; end: number };
+
+/**
+ * Words in a text worth spell-checking, with their positions (for drawing
+ * underlines). Skips names and tools (see the top of this file).
+ */
+export function wordsToCheck(text: string, known: Set<string>): FoundWord[] {
+  const out: FoundWord[] = [];
+  for (const match of text.matchAll(/\p{L}[\p{L}'’-]*/gu)) {
+    const before = text.slice(0, match.index).trimEnd();
+    const sentenceStart = before === "" || /[.!?:;•(–—-]$/.test(before);
+    const whole = match[0].replace(/['’]s$/i, "").replace(/['’-]+$/, "");
+    let offset = match.index;
+    for (const word of whole.split("-")) {
+      const start = offset;
+      offset += word.length + 1; // the next part starts after the hyphen
+      if (word.length < 2) continue;
+      if (/['’]/.test(word)) continue; // contractions like "don't"
+      if (word === word.toUpperCase()) continue; // acronyms: QA, SQL
+      if (/\p{Ll}\p{Lu}/u.test(word)) continue; // TypeScript, iOS, KPIs
+      if (/^\p{Lu}/u.test(word) && !sentenceStart) continue; // a name in mid-sentence
+      if (known.has(word.toLowerCase())) continue;
+      out.push({ word, start, end: start + word.length });
+    }
+  }
+  return out;
+}
+
 /** Every word worth checking, with where it is. */
 export function spellTargets(data: ResumeData): SpellTarget[] {
   const known = knownTerms(data);
   const out: SpellTarget[] = [];
   const scan = (texts: string[], field: string, where: string) => {
-    for (const text of texts) {
-      for (const match of text.matchAll(/\p{L}[\p{L}'’-]*/gu)) {
-        const before = text.slice(0, match.index).trimEnd();
-        const sentenceStart = before === "" || /[.!?:;•(–—-]$/.test(before);
-        const whole = match[0].replace(/['’]s$/i, "").replace(/['’-]+$/, "");
-        for (const word of whole.split("-")) {
-          if (word.length < 2) continue;
-          if (/['’]/.test(word)) continue; // contractions like "don't"
-          if (word === word.toUpperCase()) continue; // acronyms: QA, SQL, KPIs is handled below
-          if (/\p{Ll}\p{Lu}/u.test(word)) continue; // TypeScript, iOS, KPIs
-          if (/^\p{Lu}/u.test(word) && !sentenceStart) continue; // a name in mid-sentence
-          if (known.has(word.toLowerCase())) continue;
-          out.push({ word, field, where });
-        }
-      }
-    }
+    for (const text of texts) for (const { word } of wordsToCheck(text, known)) out.push({ word, field, where });
   };
   scan([data.personal.jobTitle], "personal.jobTitle", "Headline");
   scan(docText(data.summary), "summary", "Summary");

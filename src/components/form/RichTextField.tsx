@@ -3,10 +3,13 @@
 import TextAlign from "@tiptap/extension-text-align";
 import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { normalizeRichDoc, type RichDoc, type TextAlign as Align } from "@/lib/richText";
 import type { ResumeData } from "@/lib/schema";
+import { useSpellcheck } from "../spell/SpellcheckProvider";
+import { SpellSuggestions } from "../spell/SpellSuggestions";
+import { SpellUnderline, spellUnderlineKey, spellUpdate } from "../spell/spellUnderline";
 import { ErrorText, toId } from "../ui";
 
 type RichName = "summary" | `experience.${number}.description` | `projects.${number}.description`;
@@ -59,6 +62,10 @@ function RichTextEditor({
   // The last document this editor sent to the form (as JSON text). Used to
   // tell "the user typed" apart from "the form was reset from outside".
   const lastSent = useRef(JSON.stringify(normalizeRichDoc(value)));
+  // Spell check: red underlines for misspelled words (see spell/spellUnderline.ts).
+  const spell = useSpellcheck();
+  const [menu, setMenu] = useState<{ word: string; from: number; top: number; left: number } | null>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
 
   const editor = useEditor({
     extensions: [
@@ -77,6 +84,7 @@ function RichTextEditor({
         trailingNode: false,
       }),
       TextAlign.configure({ types: ["paragraph"], alignments: ["left", "center", "right", "justify"] }),
+      SpellUnderline,
     ],
     content: value,
     immediatelyRender: false,
@@ -86,6 +94,8 @@ function RichTextEditor({
         role: "textbox",
         "aria-multiline": "true",
         "aria-labelledby": labelId,
+        // Our own spell check draws the underlines; the browser's would disagree with it.
+        spellcheck: "false",
         class: "rich-editor min-h-24 px-3 py-2 text-sm text-slate-900 outline-none",
       },
     },
@@ -107,6 +117,31 @@ function RichTextEditor({
     editor.commands.setContent(incoming, { emitUpdate: false });
   }, [editor, value]);
 
+  // New spelling results (or an ignored word): redraw the underlines.
+  useEffect(() => {
+    if (editor && !editor.isDestroyed) editor.view.dispatch(editor.state.tr.setMeta(spellUnderlineKey, spellUpdate(spell)));
+  }, [editor, spell]);
+
+  /** Clicking an underlined word opens the suggestions menu under it. */
+  const openSpellMenu = (event: MouseEvent) => {
+    const target = (event.target as HTMLElement).closest<HTMLElement>(".spell-error");
+    if (!target || !editor || !boxRef.current || !spell) return;
+    const word = target.dataset.spellWord ?? target.textContent ?? "";
+    const from = editor.view.posAtDOM(target, 0);
+    const box = boxRef.current.getBoundingClientRect();
+    const rect = target.getBoundingClientRect();
+    setMenu({ word, from, top: rect.bottom - box.top + 4, left: Math.max(0, rect.left - box.left) });
+  };
+  const replaceWord = (suggestion: string) => {
+    if (!editor || !menu) return;
+    const to = menu.from + menu.word.length;
+    // Only if the word is still there (the text may have changed meanwhile).
+    if (editor.state.doc.textBetween(menu.from, to) === menu.word) {
+      editor.chain().focus().insertContentAt({ from: menu.from, to }, suggestion).run();
+    }
+    setMenu(null);
+  };
+
   // Keep accessibility attributes in sync with the error state.
   useEffect(() => {
     if (!editor) return;
@@ -121,7 +156,7 @@ function RichTextEditor({
   }, [editor, error, errorId]);
 
   return (
-    <div>
+    <div ref={boxRef} className="relative">
       <span id={labelId} className="mb-1 block text-xs font-semibold text-slate-700">
         {label}
       </span>
@@ -133,8 +168,23 @@ function RichTextEditor({
         }`}
       >
         <Toolbar editor={editor} label={label} />
-        <EditorContent editor={editor} />
+        <div onClick={openSpellMenu}>
+          <EditorContent editor={editor} />
+        </div>
       </div>
+      {menu && spell && (
+        <SpellSuggestions
+          word={menu.word}
+          suggestions={spell.suggestions(menu.word)}
+          onPick={replaceWord}
+          onIgnore={() => {
+            spell.ignore(menu.word);
+            setMenu(null);
+          }}
+          onClose={() => setMenu(null)}
+          style={{ top: menu.top, left: menu.left }}
+        />
+      )}
       {hint && !error && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
       <ErrorText id={errorId} message={error} />
     </div>

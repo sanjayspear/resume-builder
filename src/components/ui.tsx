@@ -28,6 +28,10 @@ type FieldProps = {
   error?: FieldError;
   hint?: string;
   className?: string;
+  /** Drawn over the input, e.g. spelling underlines (see spell/useSpellField). */
+  decoration?: ReactNode;
+  /** Shown under the input, e.g. spelling suggestions. */
+  footer?: ReactNode;
 };
 
 export function TextField({
@@ -35,6 +39,8 @@ export function TextField({
   error,
   hint,
   className,
+  decoration,
+  footer,
   ...inputProps
 }: FieldProps & ComponentProps<"input">) {
   const name = inputProps.name ?? label;
@@ -44,13 +50,20 @@ export function TextField({
       <label htmlFor={id} className="mb-1 block text-xs font-semibold text-slate-700">
         {label}
       </label>
-      <input
-        id={id}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${id}-error` : undefined}
-        className={`${inputBase} ${error ? inputBad : inputOk}`}
-        {...inputProps}
-      />
+      <div className="relative">
+        <input
+          id={id}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-error` : undefined}
+          className={`${inputBase} ${error ? inputBad : inputOk}`}
+          // The app's own spell check marks prose fields; elsewhere (names,
+          // emails…) the browser's red underlines are just noise.
+          spellCheck={false}
+          {...inputProps}
+        />
+        {decoration}
+      </div>
+      {footer}
       {hint && !error && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
       <ErrorText id={`${id}-error`} message={error?.message} />
     </div>
@@ -62,6 +75,8 @@ export function TextAreaField({
   error,
   hint,
   className,
+  decoration,
+  footer,
   ...areaProps
 }: FieldProps & ComponentProps<"textarea">) {
   const name = areaProps.name ?? label;
@@ -71,13 +86,18 @@ export function TextAreaField({
       <label htmlFor={id} className="mb-1 block text-xs font-semibold text-slate-700">
         {label}
       </label>
-      <textarea
-        id={id}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${id}-error` : undefined}
-        className={`${inputBase} min-h-24 resize-y ${error ? inputBad : inputOk}`}
-        {...areaProps}
-      />
+      <div className="relative">
+        <textarea
+          id={id}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-error` : undefined}
+          className={`${inputBase} min-h-24 resize-y ${error ? inputBad : inputOk}`}
+          spellCheck={false}
+          {...areaProps}
+        />
+        {decoration}
+      </div>
+      {footer}
       {hint && !error && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
       <ErrorText id={`${id}-error`} message={error?.message} />
     </div>
