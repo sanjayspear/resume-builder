@@ -26,6 +26,7 @@ Open an issue and include:
    npm run test:e2e      # browser tests (first time: npx playwright install chromium)
    npm run build
    npm run build:pages   # the static version published to GitHub Pages
+   npm run test:e2e:pages   # browser tests against that static version
    ```
 5. If you changed the PDF layout, render a sample and look at it:
    ```bash
@@ -35,7 +36,8 @@ Open an issue and include:
 
 ## Ground rules
 
-- Resume data must stay on the user's device. Don't add tracking, analytics or uploads.
+- Resume data must stay on the user's device. Don't add tracking, analytics or uploads. This includes the ATS check: job descriptions, keyword matching and spell checking all run in the browser, and assets (fonts, dictionaries) are served by the app itself.
 - Keep the PDF text-based (no images of text), so job portals can read it.
 - New fonts must allow embedding (for example the SIL Open Font License).
+- To tune the ATS check (skills, synonyms, filler words, extra spelling words), edit the JSON files in `src/data/ats/` and add a test.
 - By contributing, you agree that your contribution is licensed under the [MIT License](LICENSE).
