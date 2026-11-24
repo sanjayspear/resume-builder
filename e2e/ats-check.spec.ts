@@ -9,7 +9,7 @@ const summary = (page: Page) => page.getByTestId("ats-summary");
 const panel = (page: Page) => page.getByTestId("ats-panel");
 
 async function openResume(page: Page, template: "Modern ATS" | "Classic Sidebar") {
-  await page.goto("/");
+  await page.goto("./");
   await page.getByRole("button", { name: `Use ${template} template` }).click();
   await expect(field(page, "personal.fullName")).toHaveValue("Maya Fernandes");
 }

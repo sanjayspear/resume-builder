@@ -12,6 +12,8 @@ import type { Check, CheckStatus } from "@/lib/ats/types";
 import { emptyAtsState, findResume, updateAtsState, type AtsState } from "@/lib/library";
 import { commitLibrary, useLibrary } from "@/lib/libraryStore";
 import type { ResumeData } from "@/lib/schema";
+import { contentTips, tipsSummary } from "@/lib/ats/tips";
+import { ContentTips } from "./ContentTips";
 import { JobMatch } from "./JobMatch";
 
 /** Text-only checks re-run this long after typing pauses. */
@@ -134,12 +136,17 @@ export function AtsPanel({ resumeId, onClose }: { resumeId: string; onClose: () 
     [textJson, keywordResults, ats.jobDescription, ats.targetTitle],
   );
 
+  // Content tips (dismissed ones are remembered with the resume).
+  const tips = useMemo(() => contentTips(JSON.parse(textJson) as ResumeData), [textJson]);
+  const visibleTips = tips.filter((t) => !ats.dismissedTips.includes(t.id)).length;
+
   const checking = !reading || reading.json !== json;
   // "Readability: Passed · Structure: 1 warning - no LinkedIn"
   const line = [
     summaryLine("Readability", readability, { pending: !reading }),
     summaryLine("Structure", structure),
     jobMatchSummary(keywordResults, ats.jobDescription),
+    tipsSummary(visibleTips),
   ].join(" · ");
 
   useEffect(() => {
@@ -245,9 +252,13 @@ export function AtsPanel({ resumeId, onClose }: { resumeId: string; onClose: () 
             onJump={jump}
           />
         ) : (
-          <p className="rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
-            Coming in the next step: tips to strengthen your bullets and wording.
-          </p>
+          <ContentTips
+            tips={tips}
+            dismissed={ats.dismissedTips}
+            onDismiss={(id) => saveAts({ dismissedTips: [...new Set([...ats.dismissedTips, id])] })}
+            onRestore={() => saveAts({ dismissedTips: ats.dismissedTips.filter((id) => !tips.some((t) => t.id === id)) })}
+            onJump={jump}
+          />
         )}
       </div>
     </aside>

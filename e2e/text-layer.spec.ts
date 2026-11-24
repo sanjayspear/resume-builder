@@ -15,7 +15,7 @@ const FINAL =
 
 for (const template of ["modern-ats", "classic"] as const) {
   test(`${template}: downloaded PDF text is exact after the preview rendered other versions`, async ({ page }, testInfo) => {
-    await page.goto("/");
+    await page.goto("./");
     await page.getByRole("button", { name: "Create resume" }).click();
     await page.getByTestId(`template-option-${template}`).click();
     await page.getByTestId("sample-banner").getByRole("button", { name: "Clear sample data" }).click();

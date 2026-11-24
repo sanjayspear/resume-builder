@@ -1,12 +1,23 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /*
- * Browser (UI) tests in ./e2e. Run with: npm run test:e2e
- * Builds the app and starts the production server on port 3100, so it
- * tests what users get and doesn't clash with your own `npm run dev`
- * (Next.js allows only one dev server per project folder).
+ * Browser (UI) tests in ./e2e.
+ *
+ *   npm run test:e2e        Builds the app and starts the production server
+ *                           on port 3100 (doesn't clash with your own
+ *                           `npm run dev`: Next.js allows one dev server per
+ *                           project folder).
+ *   npm run test:e2e:pages  Builds the GitHub Pages version (static export,
+ *                           /resume-builder/ base path, exactly like the
+ *                           deploy workflow) and serves it like GitHub Pages
+ *                           on port 4173: tests what the live site runs.
+ *
+ * Tests navigate with relative paths ("./", "./edit?id=…") so they work under
+ * both "/" and "/resume-builder/".
  */
-const PORT = 3100;
+const pagesBuild = process.env.E2E_TARGET === "pages";
+const PORT = pagesBuild ? 4173 : 3100;
+const baseURL = pagesBuild ? `http://localhost:${PORT}/resume-builder/` : `http://localhost:${PORT}/`;
 
 export default defineConfig({
   testDir: "e2e",
@@ -16,14 +27,16 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "list" : [["list"], ["html", { open: "never" }]],
   use: {
-    baseURL: `http://localhost:${PORT}`,
+    baseURL,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: `npx next build && npx next start --port ${PORT}`,
-    url: `http://localhost:${PORT}`,
+    command: pagesBuild
+      ? `npm run build:pages && node scripts/serve-pages.mjs --port ${PORT}`
+      : `npx next build && npx next start --port ${PORT}`,
+    url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 300_000,
   },

@@ -15,7 +15,7 @@ async function openJobMatch(page: Page) {
 }
 
 test("paste a job description, edit the keyword list, and everything is still there after a refresh", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("./");
   await page.getByRole("button", { name: "Use Modern ATS template" }).click();
   await expect(field(page, "personal.fullName")).toHaveValue("Maya Fernandes");
   await openJobMatch(page);
@@ -62,7 +62,7 @@ test("paste a job description, edit the keyword list, and everything is still th
 });
 
 test("the job title warning leads to the headline field", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("./");
   await page.getByRole("button", { name: "Use Modern ATS template" }).click();
   await openJobMatch(page);
   await page.getByLabel("Paste job description").fill(OPS_JOB_DESCRIPTION);
@@ -76,7 +76,7 @@ test("the job title warning leads to the headline field", async ({ page }) => {
 test("privacy: the job description is never sent anywhere", async ({ page }) => {
   const sent: string[] = [];
   page.on("request", (request) => sent.push(`${request.url()} ${request.postData() ?? ""}`));
-  await page.goto("/");
+  await page.goto("./");
   await page.getByRole("button", { name: "Use Modern ATS template" }).click();
   await openJobMatch(page);
   await page.getByLabel("Target job title (optional)").fill("Chief Zorblax Officer");

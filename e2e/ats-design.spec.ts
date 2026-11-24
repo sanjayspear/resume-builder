@@ -18,7 +18,7 @@ async function changeAndWait(page: Page, change: () => Promise<void>) {
 }
 
 test("header styles, colours and Bold numbers update the preview; the PDF keeps its text", async ({ page }, testInfo) => {
-  await page.goto("/");
+  await page.goto("./");
   await page.getByRole("button", { name: "Use Modern ATS template" }).click();
   await previewSettled(page, 2);
 

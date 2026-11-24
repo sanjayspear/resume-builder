@@ -29,7 +29,7 @@ async function reloadAfterSave(page: Page) {
 }
 
 async function newResume(page: Page) {
-  await page.goto("/");
+  await page.goto("./");
   await page.getByRole("button", { name: "Create resume" }).click();
   await expect(field(page, "personal.fullName")).toHaveValue("Maya Fernandes");
 }

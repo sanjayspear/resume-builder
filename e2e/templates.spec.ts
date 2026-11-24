@@ -18,9 +18,9 @@ async function switchTemplate(page: Page, id: "classic" | "modern-ats", name: st
 
 test("switch between both templates without losing data, then download the PDF", async ({ page }, testInfo) => {
   // Create a resume: it starts with the sample data.
-  await page.goto("/");
+  await page.goto("./");
   await page.getByRole("button", { name: "Create resume" }).click();
-  await expect(page).toHaveURL(/\/edit\?id=/);
+  await expect(page).toHaveURL(/\/edit\/?\?id=/); // "/edit/?id=" on the static site
   await expect(page.getByLabel("Full name *")).toHaveValue("Maya Fernandes");
   await previewSettled(page, 2);
 
@@ -85,7 +85,7 @@ test("resumes saved by the previous version open with the right template", async
   });
   await seedLibrary(page, [old("a", "Old Slate", "slate"), old("b", "Old Minimal", "minimal"), old("c", "No Template", "")]);
 
-  await page.goto("/");
+  await page.goto("./");
   const card = (name: string) => page.getByRole("article", { name: new RegExp(name) }).getByTestId("resume-card-template");
   await expect(card("Old Slate")).toHaveText("Classic Sidebar");
   await expect(card("Old Minimal")).toHaveText("Modern ATS");

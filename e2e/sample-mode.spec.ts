@@ -12,7 +12,7 @@ const fullName = (page: Page) => page.getByLabel("Full name *");
 
 /** Creates a resume from the home page and waits for the sample preview. */
 async function createResume(page: Page) {
-  await page.goto("/");
+  await page.goto("./");
   await page.getByRole("button", { name: "Create resume" }).click();
   await expect(fullName(page)).toHaveValue(SAMPLE_NAME);
   await previewSettled(page, 2);
@@ -66,7 +66,7 @@ for (const [id, name] of [
   ["modern-ats", "Modern ATS"],
 ] as const) {
   test(`new resume with ${name}: form and preview show the sample; the card has a Sample badge`, async ({ page }) => {
-    await page.goto("/");
+    await page.goto("./");
     await page.getByRole("button", { name: `Use ${name} template` }).click();
     await expect(page.getByRole("radio", { name: new RegExp(name) })).toBeChecked();
     await expect(fullName(page)).toHaveValue(SAMPLE_NAME);
@@ -142,7 +142,7 @@ test("opening an existing resume shows exactly what was saved (never the sample)
     data: { ...ownResume.data, personal: { ...ownResume.data.personal, fullName: "", email: "", jobTitle: "" }, summary: "", skillGroups: [] },
   };
   await seedLibrary(page, [ownResume, cleared]);
-  await page.goto("/");
+  await page.goto("./");
   await expect(page.getByTestId("sample-badge")).toHaveCount(0);
 
   await page.getByRole("button", { name: /Edit Priya Raman/ }).click();
@@ -154,7 +154,7 @@ test("opening an existing resume shows exactly what was saved (never the sample)
   await expect(fullName(page)).toHaveValue("Priya Raman");
 
   // An empty saved resume stays empty too.
-  await page.goto("/edit?id=empty");
+  await page.goto("./edit?id=empty");
   await expect(fullName(page)).toHaveValue("");
   await expect(banner(page)).toHaveCount(0);
   await previewSettled(page, 1);
@@ -189,7 +189,7 @@ test("downloading with sample details warns first, in the editor and on the home
 
 test("own details with a common job title and skill download without a warning", async ({ page }) => {
   await seedLibrary(page, [ownResume]);
-  await page.goto("/edit?id=own");
+  await page.goto("./edit?id=own");
   await expect(fullName(page)).toHaveValue("Priya Raman");
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download PDF" }).click();
