@@ -94,6 +94,21 @@ export default function AboutPage() {
               <dd className="font-medium text-slate-900">A4</dd>
               <dt className="text-slate-500">Templates</dt>
               <dd className="font-medium text-slate-900">Classic Sidebar, Modern ATS</dd>
+              <dt className="text-slate-500">Licence</dt>
+              <dd className="font-medium text-slate-900">
+                Free for individuals and small businesses (
+                <a
+                  href="https://github.com/sanjayspear/resume-builder/blob/main/LICENSE"
+                  className="text-indigo-700 underline-offset-2 hover:underline"
+                >
+                  PolyForm Small Business
+                </a>
+                ). Larger companies:{" "}
+                <a href="mailto:github.com/sanjayspear" className="text-indigo-700 underline-offset-2 hover:underline">
+                  commercial licence
+                </a>
+                .
+              </dd>
             </dl>
           </Card>
 

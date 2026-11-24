@@ -4,6 +4,8 @@ Build a clean, professional resume in your browser and download it as a **text-b
 
 **Live app:** https://sanjayspear.github.io/resume-builder/
 
+**Free for individuals and small businesses.** The source code is public under the [PolyForm Small Business License](LICENSE); larger companies need a [commercial licence](#commercial-use).
+
 ![My resumes page](docs/screenshots/home.png)
 
 ![Editor with the Modern ATS template and live PDF preview](docs/screenshots/editor.png)
@@ -156,9 +158,21 @@ Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code 
 
 ## License
 
-Resume Builder is open source under the [MIT License](LICENSE) © 2026 Sanjay Y M.
+Resume Builder is **source-available** under the [PolyForm Small Business License 1.0.0](LICENSE) © 2026 Sanjay Y M. In short (the [licence text](LICENSE) is what counts):
 
-It includes third-party files under their own licences:
+- **Free** for personal use, education, non-profits, and companies with fewer than 100 people **and** less than about USD 1 million in yearly revenue. You may use, change and share the app on those terms.
+- **Larger companies need a commercial licence**: see [Commercial use](#commercial-use).
+- The software comes as is, without warranty.
+
+Versions published before 24 November 2026 (up to commit `fd665cb`) were released under the MIT License; copies obtained then remain under MIT.
+
+### Commercial use
+
+If your company has 100 or more people, or about USD 1 million or more in yearly revenue, and wants to use Resume Builder (for example to host it for customers or students, include it in a product, or use it in a paid service), please get a commercial licence. Email **github.com/sanjayspear** with your company name, how you'd like to use it, and roughly how many people will use it.
+
+### Third-party licences
+
+Resume Builder includes third-party files under their own licences:
 
 | What | Licence | Licence text |
 | --- | --- | --- |

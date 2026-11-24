@@ -42,4 +42,4 @@ Open an issue and include:
 - Keep the PDF text-based (no images of text), so job portals can read it.
 - New fonts must allow embedding (for example the SIL Open Font License).
 - To tune the ATS check (skills, synonyms, filler words, extra spelling words), edit the JSON files in `src/data/ats/` and add a test.
-- By contributing, you agree that your contribution is licensed under the [MIT License](LICENSE).
+- By contributing, you agree that your contribution is licensed under this project's licence (the [PolyForm Small Business License 1.0.0](LICENSE)), and that Sanjay Y M may also license it to others under commercial licence terms. This lets larger companies get a commercial licence for the whole app.

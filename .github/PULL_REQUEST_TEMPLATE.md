@@ -18,3 +18,4 @@
 
 - [ ] Resume data stays on the device (no uploads, tracking or analytics).
 - [ ] The PDF stays text-based (no images of text).
+- [ ] I agree to the licensing terms for contributions in [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md) (project licence + commercial licences).
