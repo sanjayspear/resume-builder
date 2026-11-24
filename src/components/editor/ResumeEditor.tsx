@@ -103,7 +103,7 @@ function SampleBanner({ control, onClear }: { control: Control<ResumeData>; onCl
     >
       <p className="min-w-0 flex-1">
         <strong className="font-semibold">You&apos;re looking at sample data.</strong> Clear it to start entering your
-        own details.
+        own details. Sample details are fictional.
       </p>
       <button
         type="button"

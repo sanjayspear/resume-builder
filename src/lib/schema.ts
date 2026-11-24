@@ -15,7 +15,8 @@ import { TEMPLATE_IDS } from "./templates";
 // Matches any 4-digit year from 1900-2099, e.g. "2023" or "January 2023".
 const YEAR_PATTERN = /\b(19|20)\d{2}\b/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_PATTERN = /^[+()\d\s.-]{7,20}$/;
+// Digits, spaces and + ( ) . -; X stands for a hidden digit ("+91 98XXX XXXXX").
+const PHONE_PATTERN = /^(?=.*\d)[+()\dXx\s.-]{7,20}$/;
 const WEBSITE_PATTERN = /^(https?:\/\/)?[\w-]+(\.[\w-]+)+(\/\S*)?$/i;
 
 /** Pulls the 4-digit year out of text like "January 2023" (or null). */
@@ -93,7 +94,7 @@ const personalSchema = z.object({
     .string()
     .trim()
     .refine((v) => v === "" || PHONE_PATTERN.test(v), {
-      message: "Enter a valid phone number (digits, spaces and + - ( ) . only)",
+      message: "Enter a valid phone number (digits, spaces and + - ( ) . only; X for a hidden digit)",
     }),
   email: required("Email is required").refine((v) => v === "" || EMAIL_PATTERN.test(v), {
     message: "Enter a valid email address, e.g. name@example.com",

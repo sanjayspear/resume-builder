@@ -6,18 +6,20 @@ const items = (...values: string[]) => values.map((value) => ({ value }));
 
 /*
  * Example content for "Load sample data" and "Start from the sample resume".
- * Maya Fernandes and Brightline Logistics are fictional; all text is original.
- * The email uses example.com and the phone a 555 number, both reserved for examples.
+ * Maya Fernandes and Quillmere Logistics are fictional; all text is original.
+ * The email uses example.com, the phone is masked (512-555-01XX, in the range reserved for fiction)
+ * and the LinkedIn path is an obvious placeholder. tests/sample-data-safety.test.ts
+ * checks this.
  */
 export const sampleResume: ResumeData = {
   personal: {
     fullName: "Maya Fernandes",
     jobTitle: "Operations Manager",
     location: "Austin, TX",
-    phone: "512-555-0147",
+    phone: "512-555-01XX",
     email: "maya.fernandes@example.com",
     website: "",
-    linkedin: "linkedin.com/in/maya-fernandes-sample",
+    linkedin: "linkedin.com/in/your-profile",
   },
   summary: textToDoc(
     "Operations Manager with 6+ years of experience running warehouse, inventory and customer service teams. Cut stock-holding costs by 18% while raising order accuracy to 99.4%. Skilled in demand planning, vendor negotiation and coaching. Known for calm, practical leadership through peak season and for turning front-line ideas into lasting process improvements.",
@@ -29,7 +31,7 @@ export const sampleResume: ResumeData = {
       endDate: "January 2024",
       isCurrent: false,
       jobTitle: "Operations Manager",
-      company: "Brightline Logistics",
+      company: "Quillmere Logistics",
       location: "Austin, TX",
       logo: "",
       description: bulletsToDoc([
@@ -48,7 +50,7 @@ export const sampleResume: ResumeData = {
       endDate: "January 2023",
       isCurrent: false,
       jobTitle: "Assistant Operations Manager",
-      company: "Brightline Logistics",
+      company: "Quillmere Logistics",
       location: "Austin, TX",
       logo: "",
       description: bulletsToDoc([
@@ -62,7 +64,7 @@ export const sampleResume: ResumeData = {
       endDate: "",
       isCurrent: true,
       jobTitle: "Senior Operations Manager",
-      company: "Brightline Logistics",
+      company: "Quillmere Logistics",
       location: "Austin, TX",
       logo: "",
       description: bulletsToDoc([

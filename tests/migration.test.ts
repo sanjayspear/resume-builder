@@ -7,7 +7,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { normalizeResumeData } from "@/lib/library";
 import { sampleResume } from "@/lib/sampleData";
-import { resumeSchema } from "@/lib/schema";
+import { contentSignature, isUntouchedSample, OLD_SAMPLE_VALUES, previousSample, sampleLeftovers } from "@/lib/sampleMode";
+import { emptyResume, resumeSchema, type ResumeData } from "@/lib/schema";
 import { resolveTemplateId } from "@/lib/templates";
 import { normalizeStyle } from "@/lib/theme";
 
@@ -63,4 +64,49 @@ test("a resume saved by the previous version loads with all new fields and is va
 test("the sample resume passes the form's validation", () => {
   const result = resumeSchema.safeParse(sampleResume);
   assert.ok(result.success, JSON.stringify(result.error?.issues));
+});
+
+/* ---------- Resumes saved from the previous sample (before November 2026) ---------- */
+
+/** As stored in the browser: JSON, with a design chosen by the user. */
+const saved = (data: ResumeData) =>
+  JSON.parse(JSON.stringify({ ...data, style: { ...data.style, template: "modern-ats", atsAccentColor: "#7A2E3B" } }));
+const oldValuesIn = (data: ResumeData) =>
+  [data.personal.phone, data.personal.linkedin, ...data.experience.map((job) => job.company)].filter((v) =>
+    (Object.values(OLD_SAMPLE_VALUES) as string[]).includes(v),
+  );
+
+test("an untouched copy of the previous sample loads as the current sample, keeping its design", () => {
+  const loaded = normalizeResumeData(saved(previousSample()));
+  assert.deepEqual(oldValuesIn(loaded), []);
+  assert.equal(loaded.personal.phone, sampleResume.personal.phone);
+  assert.equal(loaded.personal.linkedin, sampleResume.personal.linkedin);
+  assert.ok(loaded.experience.every((job) => job.company === sampleResume.experience[0].company));
+  assert.ok(isUntouchedSample(loaded), "keeps its Sample badge and banner");
+  assert.equal(loaded.style.template, "modern-ats");
+  assert.equal(loaded.style.atsAccentColor, "#7A2E3B");
+  assert.ok(resumeSchema.safeParse(loaded).success);
+});
+
+test("an edited copy of the previous sample is never changed, and the download warning flags the old details", () => {
+  const edited = previousSample();
+  edited.personal.fullName = "Zanzibar Quokkawell";
+  edited.personal.email = "zq@example.org";
+  const loaded = normalizeResumeData(saved(edited));
+  assert.equal(contentSignature(loaded), contentSignature(edited), "content exactly as saved");
+  assert.equal(oldValuesIn(loaded).length, 2 + edited.experience.length);
+  assert.deepEqual(sampleLeftovers(loaded), ["phone", "LinkedIn", "company", "example sentences"]);
+});
+
+test("each old detail on its own is flagged before download, however the phone is written", () => {
+  const own = (): ResumeData => ({ ...emptyResume(), personal: { ...emptyResume().personal, fullName: "Zanzibar Quokkawell" } });
+  const phone = own();
+  phone.personal.phone = OLD_SAMPLE_VALUES.phone.replaceAll("-", " ");
+  assert.deepEqual(sampleLeftovers(phone), ["phone"]);
+  const linkedin = own();
+  linkedin.personal.linkedin = OLD_SAMPLE_VALUES.linkedin.toUpperCase();
+  assert.deepEqual(sampleLeftovers(linkedin), ["LinkedIn"]);
+  const company = own();
+  company.experience = [{ ...previousSample().experience[0], company: ` ${OLD_SAMPLE_VALUES.company} `, description: emptyResume().summary }];
+  assert.deepEqual(sampleLeftovers(company), ["company"]);
 });

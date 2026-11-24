@@ -85,6 +85,48 @@ export function isUntouchedSample(data: ResumeData): boolean {
   return contentSignature(data) === SAMPLE_SIGNATURE;
 }
 
+/* ---------- The previous sample ---------- */
+
+/**
+ * Until November 2026 the sample had a full phone number, a LinkedIn path
+ * someone could register and a company name real businesses use. Resumes
+ * saved back then still contain them.
+ */
+export const OLD_SAMPLE_VALUES = {
+  phone: "512-555-0147",
+  linkedin: "linkedin.com/in/maya-fernandes-sample",
+  company: "Brightline Logistics",
+} as const;
+
+/** The sample exactly as it was before November 2026 (only these three details differed). */
+export function previousSample(): ResumeData {
+  const data = structuredClone(sampleResume);
+  data.personal.phone = OLD_SAMPLE_VALUES.phone;
+  data.personal.linkedin = OLD_SAMPLE_VALUES.linkedin;
+  for (const job of data.experience) job.company = OLD_SAMPLE_VALUES.company;
+  return data;
+}
+const PREVIOUS_SAMPLE_SIGNATURE = contentSignature(previousSample());
+
+/**
+ * A saved resume that is still exactly the previous sample becomes the
+ * current sample (same design), so it keeps its "Sample" badge and banner.
+ * Anything else, including a partly edited old sample, is returned as is:
+ * the download warning still flags the old details (sampleLeftovers).
+ */
+export function upgradePreviousSample(data: ResumeData): ResumeData {
+  if (contentSignature(data) !== PREVIOUS_SAMPLE_SIGNATURE) return data;
+  const sp = sampleResume.personal;
+  const company = sampleResume.experience[0].company;
+  return {
+    ...data,
+    personal: { ...data.personal, phone: sp.phone, linkedin: sp.linkedin },
+    experience: data.experience.map((job) =>
+      job.company.trim() === OLD_SAMPLE_VALUES.company ? { ...job, company } : job,
+    ),
+  };
+}
+
 /** True when there's no content at all (empty entries don't count). */
 export function hasNoContent(data: ResumeData): boolean {
   return contentSignature(data) === EMPTY_SIGNATURE;
@@ -106,7 +148,8 @@ const SAMPLE_SENTENCES = [
   ...sampleResume.projects.flatMap((project) => sentencesOf(plain(project.description))),
 ];
 const same = (a: string, b: string) => a !== "" && a.trim().toLowerCase() === b.trim().toLowerCase();
-const digits = (value: string) => value.replace(/\D/g, "");
+/** A phone number as digits and hidden-digit X's only, so "(512) 555 01xx" = "512-555-01XX" and "+91 98XXX XXXXX" keeps its mask. */
+const phoneKey = (value: string) => value.toUpperCase().replace(/[^\dX]/g, "");
 
 /**
  * Distinctive sample details still in the resume, as short labels for the
@@ -122,10 +165,12 @@ export function sampleLeftovers(data: ResumeData): string[] {
   const sp = sampleResume.personal;
   if (same(p.fullName, sp.fullName)) found.push("name");
   if (same(p.email, sp.email)) found.push("email");
-  if (digits(sp.phone) !== "" && digits(p.phone) === digits(sp.phone)) found.push("phone");
-  if (same(p.linkedin, sp.linkedin)) found.push("LinkedIn");
+  // The phone, LinkedIn and company of the previous sample count too (resumes saved before November 2026).
+  const old = OLD_SAMPLE_VALUES;
+  if (phoneKey(p.phone) !== "" && [sp.phone, old.phone].some((phone) => phoneKey(p.phone) === phoneKey(phone))) found.push("phone");
+  if (same(p.linkedin, sp.linkedin) || same(p.linkedin, old.linkedin)) found.push("LinkedIn");
 
-  const sampleCompanies = new Set(sampleResume.experience.map((job) => job.company.trim().toLowerCase()));
+  const sampleCompanies = new Set([...sampleResume.experience.map((job) => job.company), old.company].map((c) => c.trim().toLowerCase()));
   if (data.experience.some((job) => sampleCompanies.has(job.company.trim().toLowerCase()))) found.push("company");
 
   const allText = [

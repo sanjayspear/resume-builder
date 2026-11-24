@@ -168,7 +168,7 @@ Versions published before 24 November 2026 (up to commit `fd665cb`) were release
 
 ### Commercial use
 
-If your company has 100 or more people, or about USD 1 million or more in yearly revenue, and wants to use Resume Builder (for example to host it for customers or students, include it in a product, or use it in a paid service), please get a commercial licence. Email **github.com/sanjayspear** with your company name, how you'd like to use it, and roughly how many people will use it.
+If your company has 100 or more people, or about USD 1 million or more in yearly revenue, and wants to use Resume Builder (for example to host it for customers or students, include it in a product, or use it in a paid service), please get a commercial licence. For questions or commercial licensing, [open an issue on GitHub](https://github.com/sanjayspear/resume-builder/issues) or contact me via [github.com/sanjayspear](https://github.com/sanjayspear). Include your company name, how you'd like to use it, and roughly how many people will use it.
 
 ### Third-party licences
 

@@ -1,6 +1,7 @@
 import { bulletsToDoc, normalizeRichDoc } from "./richText";
 import { emptyExperience, emptyResume, type Certification, type Experience, type Project, type ResumeData } from "./schema";
 import { LANGUAGE_LEVEL_VALUES, type LanguageLevel } from "./languages";
+import { upgradePreviousSample } from "./sampleMode";
 import { normalizeStyle } from "./theme";
 
 /*
@@ -93,11 +94,16 @@ export function displayName(resume: Pick<SavedResume, "customName" | "data">): s
 /**
  * Makes any stored/imported value safe to load into the form: missing
  * fields get blank defaults, wrong types are dropped. Never throws.
+ * An untouched copy of the previous sample becomes the current sample
+ * (see upgradePreviousSample in sampleMode.ts).
  */
 export function normalizeResumeData(value: unknown): ResumeData {
   const base = emptyResume();
   if (!value || typeof value !== "object") return base;
-  const saved = value as Partial<ResumeData>;
+  return upgradePreviousSample(normalizeFields(value as Partial<ResumeData>, base));
+}
+
+function normalizeFields(saved: Partial<ResumeData>, base: ResumeData): ResumeData {
   const list = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
   const text = (v: unknown, fallback: string) => (typeof v === "string" ? v : fallback);
   return {

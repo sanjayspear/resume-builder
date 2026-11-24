@@ -102,7 +102,7 @@ describe("sample mode detection", () => {
   test("any edit ends sample mode", () => {
     const edits: ((d: ResumeData) => void)[] = [
       (d) => (d.personal.fullName = "Priya Raman"),
-      (d) => (d.personal.phone = "555 0000"),
+      (d) => (d.personal.phone = "512-555-0100"),
       (d) => (d.experience[0].description = bulletsToDoc(["Something I did."])),
       (d) => (d.skillGroups[0].rating = 3),
       (d) => (d.languages = []),
@@ -215,10 +215,43 @@ describe("download warning: sample details left behind", () => {
     assert.ok(left.includes("phone") && !left.includes("name") && !left.includes("email"), left.join(", "));
   });
 
-  test("the sample phone is recognised however it's written", () => {
+  test("the sample (masked) phone is recognised however it's written", () => {
     const data = ownResume();
-    data.personal.phone = "(512) 555 0147";
+    data.personal.phone = "(512) 555 01xx";
     assert.deepEqual(sampleLeftovers(data), ["phone"]);
+  });
+
+  test("a masked phone (+91 98XXX XXXXX) is valid and isn't mistaken for the sample's", () => {
+    const data = ownResume();
+    assert.equal(data.personal.phone, "+91 98XXX XXXXX");
+    assert.ok(resumeSchema.safeParse(data).success, "masked phone passes validation");
+    assert.deepEqual(sampleLeftovers(data), []);
+    for (const bad of ["XXXXXXXXX", "+91 98XXX XXXXX ext. 4"]) {
+      data.personal.phone = bad;
+      assert.ok(!resumeSchema.safeParse(data).success, `"${bad}" is rejected`);
+    }
+  });
+
+  for (const template of TEMPLATE_IDS) {
+    test(`${template}: a masked phone is printed as typed, with no tel: link`, async () => {
+      const data = { ...ownResume(), style: { ...sample().style, template } };
+      const pdf = await renderPdf(data);
+      assert.ok(squash((await extractPdf(pdf)).streamText).includes(squash("+91 98XXX XXXXX")));
+      assert.ok(!pdf.toString("latin1").includes("tel:"), "no dial link for a number that can't be dialled");
+    });
+  }
+
+  test("classic: a full phone number still gets its tel: link", async () => {
+    const data = { ...sample(), style: { ...sample().style, template: "classic" as const } };
+    data.personal.phone = "512-555-0147";
+    const pdf = await renderPdf(data);
+    assert.ok(pdf.toString("latin1").includes("tel:5125550147"));
+  });
+
+  test("the sample's own phone is masked, so it has no tel: link either", async () => {
+    assert.equal(sampleResume.personal.phone, "512-555-01XX");
+    const pdf = await renderPdf({ ...sample(), style: { ...sample().style, template: "classic" } });
+    assert.ok(!pdf.toString("latin1").includes("tel:"));
   });
 
   test("one sample sentence pasted into your own text is flagged", () => {

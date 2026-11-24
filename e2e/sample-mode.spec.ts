@@ -4,6 +4,7 @@
  * preview-only placeholders. Run with: npm run test:e2e
  */
 import { expect, test, type Page } from "@playwright/test";
+import { previousSample } from "../src/lib/sampleMode";
 import { confirmDialog, field, pdfText, previewSettled, seedLibrary } from "./helpers";
 
 const SAMPLE_NAME = "Maya Fernandes";
@@ -70,8 +71,8 @@ for (const [id, name] of [
     await page.getByRole("button", { name: `Use ${name} template` }).click();
     await expect(page.getByRole("radio", { name: new RegExp(name) })).toBeChecked();
     await expect(fullName(page)).toHaveValue(SAMPLE_NAME);
-    await expect(field(page, "experience.0.company")).toHaveValue("Brightline Logistics");
-    await expect(banner(page)).toContainText("You're looking at sample data. Clear it to start entering your own details.");
+    await expect(field(page, "experience.0.company")).toHaveValue("Quillmere Logistics");
+    await expect(banner(page)).toContainText("You're looking at sample data. Clear it to start entering your own details. Sample details are fictional.");
     await previewSettled(page, 2);
 
     await page.getByRole("link", { name: "Back to My resumes" }).click();
@@ -118,7 +119,7 @@ test("own data: Clear form asks first; Cancel keeps it, Clear empties it, Undo b
 
   await page.getByRole("button", { name: "Undo" }).click();
   await expect(fullName(page)).toHaveValue("Priya Raman");
-  await expect(field(page, "experience.0.company")).toHaveValue("Brightline Logistics");
+  await expect(field(page, "experience.0.company")).toHaveValue("Quillmere Logistics");
   await expect(page.getByTestId("experience-card")).toHaveCount(3);
 });
 
@@ -132,6 +133,22 @@ test("the Undo button disappears after about 10 seconds", async ({ page }) => {
   await expect(undo).toBeVisible();
   await page.clock.fastForward(1_500);
   await expect(undo).toHaveCount(0);
+});
+
+/* 4b */
+test("a sample saved by the previous version opens with the new fictional details and keeps its Sample badge", async ({ page }) => {
+  const old = { id: "old-sample", customName: "", createdAt: 1, updatedAt: 1, data: { ...previousSample(), style: { template: "modern-ats" } } };
+  await seedLibrary(page, [old]);
+  await page.goto("./");
+  await expect(page.getByTestId("resume-card").getByTestId("sample-badge")).toHaveText("Sample");
+
+  await page.goto("./edit?id=old-sample");
+  await expect(fullName(page)).toHaveValue(SAMPLE_NAME);
+  await expect(field(page, "personal.phone")).toHaveValue("512-555-01XX");
+  await expect(field(page, "personal.linkedin")).toHaveValue("linkedin.com/in/your-profile");
+  await expect(field(page, "experience.0.company")).toHaveValue("Quillmere Logistics");
+  await expect(banner(page)).toBeVisible();
+  await previewSettled(page, 2);
 });
 
 /* 4 */

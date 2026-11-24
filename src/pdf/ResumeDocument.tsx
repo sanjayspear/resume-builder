@@ -405,9 +405,14 @@ function Contacts({ personal, placeholders }: { personal: ResumeData["personal"]
           <View style={s.contactIcon}>
             <PhoneIcon />
           </View>
-          <Link src={`tel:${phone.replace(/[^\d+]/g, "")}`} style={[s.contactText, { color: INK, textDecoration: "none" }]}>
-            {phone}
-          </Link>
+          {/x/i.test(phone) ? (
+            // A partly hidden number ("+91 98XXX XXXXX") can't be dialled: plain text, no tel: link.
+            <Text style={s.contactText}>{phone}</Text>
+          ) : (
+            <Link src={`tel:${phone.replace(/[^\d+]/g, "")}`} style={[s.contactText, { color: INK, textDecoration: "none" }]}>
+              {phone}
+            </Link>
+          )}
         </View>
       )}
       {email && (

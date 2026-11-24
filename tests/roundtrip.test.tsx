@@ -22,7 +22,7 @@ import { extractPdf, multiLetterGlyphs, renderPdf, toUnicodeProblems } from "./h
 const LINES = [
   "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
   "abcdefghijklmnopqrstuvwxyz",
-  "0123456789",
+  "0123456789", // privacy-scan: allow (every digit, for the font test; not a phone)
   `( ) ' " : ; & - – • / | @ . ,`,
   "’ ‘ “ ” Fabrikam’s “quoted” ‘single’",
   "REST TestNG Azure Software efficiency",

@@ -103,9 +103,16 @@ export default function AboutPage() {
                 >
                   PolyForm Small Business
                 </a>
-                ). Larger companies:{" "}
-                <a href="mailto:github.com/sanjayspear" className="text-indigo-700 underline-offset-2 hover:underline">
-                  commercial licence
+                ). Larger companies need a commercial licence. For questions or commercial licensing,{" "}
+                <a
+                  href="https://github.com/sanjayspear/resume-builder/issues"
+                  className="text-indigo-700 underline-offset-2 hover:underline"
+                >
+                  open an issue on GitHub
+                </a>{" "}
+                or contact me via{" "}
+                <a href="https://github.com/sanjayspear" className="text-indigo-700 underline-offset-2 hover:underline">
+                  github.com/sanjayspear
                 </a>
                 .
               </dd>
