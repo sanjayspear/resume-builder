@@ -36,6 +36,18 @@ Open an issue and include:
    ```
 6. Open a pull request describing what changed and why. Screenshots help for UI changes.
 
+## Sample and test data
+
+The repository is public, so example details must never belong to a real person or company. This applies to the sample resume, test fixtures, tests and docs:
+
+- **Phones:** US numbers only in the range reserved for fiction, 555-0100 to 555-0199 (e.g. `512-555-0147`). Mask any other number with X (e.g. `+91 98XXX XXXXX`).
+- **Emails:** only `example.com`, `example.org` or `example.net`. Never a personal address (gmail.com, outlook.com and so on).
+- **LinkedIn:** only obvious placeholders, `linkedin.com/in/your-profile` or `linkedin.com/in/your-name`.
+- **Companies:** clearly fictional names (e.g. Quillmere Logistics, or well-known fictional ones like Contoso). Search the name first to make sure no real business uses it.
+- **Addresses:** city and region only, never a street, house number or postcode.
+
+`tests/sample-data-safety.test.ts` (part of `npm test`) enforces these rules. It checks phones, emails and LinkedIn links in the sample resume, all tests and the README, and street addresses in the sample resume and `tests/fixtures/`. If a line needs a value that breaks a rule on purpose, add the comment `privacy-scan: allow` on that line with a short reason. For example, `"0123456789"` in a font test looks like a phone number. The ban on personal email addresses applies to every file in the repository and has no exception.
+
 ## Ground rules
 
 - Resume data must stay on the user's device. Don't add tracking, analytics or uploads. This includes the ATS check: job descriptions, keyword matching and spell checking all run in the browser, and assets (fonts, dictionaries) are served by the app itself.
