@@ -8,8 +8,10 @@
  */
 import { flattenDoc, type RichDoc } from "../richText";
 import { isBlankExperience, isBlankProject, type ResumeData } from "../schema";
+import type { SpellResult } from "../spell/checker";
+import type { SpellTarget } from "../spell/targets";
 
-export type TipCategory = "weak-start" | "numbers" | "long" | "bullet-count" | "repeated-verb" | "cliche" | "personal";
+export type TipCategory = "spelling" | "weak-start" | "numbers" | "long" | "bullet-count" | "repeated-verb" | "cliche" | "personal";
 
 export type Tip = {
   id: string;
@@ -23,6 +25,7 @@ export type Tip = {
 };
 
 export const TIP_CATEGORIES: { id: TipCategory; label: string }[] = [
+  { id: "spelling", label: "Spelling" },
   { id: "personal", label: "Personal details to remove" },
   { id: "weak-start", label: "Weak openings" },
   { id: "numbers", label: "Add numbers" },
@@ -271,4 +274,36 @@ const VERB_ALTERNATIVES: Record<string, string[]> = {
 /** "Content tips: 4 tips" (dismissed tips don't count). */
 export function tipsSummary(visible: number): string {
   return `Content tips: ${visible === 0 ? "none" : `${visible} tip${visible === 1 ? "" : "s"}`}`;
+}
+
+/**
+ * One tip per misspelled word (however often it appears), with suggestions
+ * and where it is. Its id is the word, so "Ignore word" keeps it ignored
+ * everywhere in this resume.
+ */
+export function spellingTips(targets: SpellTarget[], results: Map<string, SpellResult>): Tip[] {
+  const byWord = new Map<string, { word: string; uses: SpellTarget[]; suggestions: string[] }>();
+  for (const target of targets) {
+    const result = results.get(target.word);
+    if (!result || result.correct) continue;
+    const key = target.word.toLowerCase();
+    const entry = byWord.get(key) ?? { word: target.word, uses: [], suggestions: result.suggestions };
+    entry.uses.push(target);
+    byWord.set(key, entry);
+  }
+  return [...byWord.entries()].map(([key, { word, uses, suggestions }]) => {
+    const places = [...new Set(uses.map((u) => u.where))];
+    const where = `${places.slice(0, 2).join(", ")}${places.length > 2 ? "…" : ""}`;
+    return {
+      id: `spell:${key}`,
+      category: "spelling" as const,
+      title: `“${word}”`,
+      field: uses[0].field,
+      message:
+        suggestions.length > 0
+          ? `Did you mean ${suggestions.map((x) => `“${x}”`).join(", ")}? (in ${where})`
+          : `Not in the English dictionary (US or UK). (in ${where}) If it's a name or a term, choose Ignore word.`,
+      why: "Spelling mistakes look careless, and an ATS can't match a misspelled keyword.",
+    };
+  });
 }

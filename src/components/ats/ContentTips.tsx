@@ -9,12 +9,15 @@ import { TIP_CATEGORIES, type Tip } from "@/lib/ats/tips";
  */
 export function ContentTips({
   tips,
+  spellingStatus,
   dismissed,
   onDismiss,
   onRestore,
   onJump,
 }: {
   tips: Tip[];
+  /** "loading" while the dictionary loads, "ready", or an error message. */
+  spellingStatus: string;
   /** Ids of dismissed tips. */
   dismissed: string[];
   onDismiss: (id: string) => void;
@@ -57,10 +60,11 @@ export function ContentTips({
                       <button
                         type="button"
                         onClick={() => onDismiss(tip.id)}
-                        aria-label={`Dismiss tip: ${tip.title}`}
+                        aria-label={tip.category === "spelling" ? `Ignore word ${tip.title}` : `Dismiss tip: ${tip.title}`}
+                        title={tip.category === "spelling" ? "It's spelled right (a name or a term): don't flag it in this resume" : undefined}
                         className="rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-100"
                       >
-                        Dismiss
+                        {tip.category === "spelling" ? "Ignore word" : "Dismiss"}
                       </button>
                     </div>
                   </li>
@@ -75,8 +79,12 @@ export function ContentTips({
           Show {dismissedHere} dismissed tip{dismissedHere === 1 ? "" : "s"} again
         </button>
       )}
-      <p className="text-xs text-slate-500">
-        Spelling isn&apos;t checked here yet: your browser underlines misspelled words in the form fields.
+      <p data-testid="spelling-status" className="text-xs text-slate-500">
+        {spellingStatus === "loading"
+          ? "Checking spelling…"
+          : spellingStatus === "ready"
+            ? "Spelling is checked on this device with English dictionaries (US and UK spellings both count). Names, tools and skills aren't checked."
+            : `${spellingStatus} Your browser still underlines misspelled words in the form fields.`}
       </p>
     </div>
   );

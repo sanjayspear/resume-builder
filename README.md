@@ -19,7 +19,7 @@ Build a clean, professional resume in your browser and download it as a **text-b
 - **Skill groups** with 1-10 rating bars, and **languages** with proficiency levels.
 - **Starts with an example**: a new resume is filled with sample content so the preview shows the template properly. A banner offers **Clear sample data**, cards show a **Sample** badge, and downloading warns if example details (name, email, phone…) are still in the resume.
 - **Clear form** with a confirmation and **Undo**; grey hints in the preview (never in the PDF) while fields are empty.
-- **ATS check** (in the editor): reads the real PDF back the way a resume scanner does and checks readability (every word, reading order, headings, no text in images) and structure (contact details, complete jobs, consistent dates, length, summary), plus **job match** against a pasted job description (keywords found and missing, synonyms and word forms, job title, over-use). Plus **content tips** (numbers in bullets, weak openings, long or repeated bullets, clichés, personal details), each dismissible. Runs entirely in the browser; nothing is uploaded. The skills dictionary, synonyms and filler words are editable JSON files in `src/data/ats/`.
+- **ATS check** (in the editor): reads the real PDF back the way a resume scanner does and checks readability (every word, reading order, headings, no text in images) and structure (contact details, complete jobs, consistent dates, length, summary), plus **job match** against a pasted job description (keywords found and missing, synonyms and word forms, job title, over-use). Plus **content tips** (numbers in bullets, weak openings, long or repeated bullets, clichés, personal details) and a **spell check** with English dictionaries (US and UK spellings both accepted), each dismissible. Runs entirely in the browser; nothing is uploaded. The skills dictionary, synonyms and filler words are editable JSON files in `src/data/ats/`.
 - **Many resumes**: search, sort, copy, rename, delete; everything auto-saves.
 - **Backup file**: export all resumes to one file and import it on any browser or computer.
 - Clear validation messages, keyboard-friendly menus and dialogs, and a built-in **user guide** (`/guide`).
@@ -59,7 +59,7 @@ Then open http://localhost:3000.
 
 | Command | What it does |
 | --- | --- |
-| `npm install` | Install dependencies (also copies the pdf.js worker into `public/`) |
+| `npm install` | Install dependencies (also copies the pdf.js worker and the spelling dictionaries into `public/`) |
 | `npm run dev` | Development server at http://localhost:3000, reloads on save |
 | `npm run build` | Production build (also type-checks the project) |
 | `npm run build:pages` | Static build for GitHub Pages into `out/` (served from `/resume-builder/`) |
@@ -111,6 +111,8 @@ e2e/                      Browser tests (Playwright)
 [Next.js](https://nextjs.org/), [React](https://react.dev/), [@react-pdf/renderer](https://react-pdf.org/), [pdf.js](https://mozilla.github.io/pdf.js/), [Tiptap](https://tiptap.dev/), [React Hook Form](https://react-hook-form.com/), [Zod](https://zod.dev/) and [Tailwind CSS](https://tailwindcss.com/).
 
 Fonts: Source Sans 3, Inter, Roboto, Gelasio, Carlito and Montserrat, all under the SIL Open Font License 1.1. Gelasio and Carlito are metric-compatible alternatives to Georgia and Calibri, which can't be embedded.
+
+Spell check: [nspell](https://github.com/wooorm/nspell) (MIT) with the Hunspell English dictionaries [dictionary-en](https://github.com/wooorm/dictionaries) and dictionary-en-gb (MIT and BSD). They're copied into `public/dictionaries/` by `npm install` and served by the app itself; words the dictionaries lack (e.g. "onboarding") are in `src/data/ats/extra-words.json`.
 
 ## Troubleshooting
 

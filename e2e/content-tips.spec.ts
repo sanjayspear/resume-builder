@@ -53,9 +53,10 @@ test("new tips appear as you type: a cliché in the summary and a full home addr
   await openTips(page);
   await expect(page.getByTestId("ats-summary")).toContainText("Content tips: 1 tip");
 
+  // Replace the whole summary (placing the cursor at the very end is unreliable in the editor).
   await field(page, "summary").click();
-  await page.keyboard.press("ControlOrMeta+End");
-  await page.keyboard.type(" Hardworking team player.");
+  await page.keyboard.press("ControlOrMeta+a");
+  await page.keyboard.type("Operations manager with 6+ years in warehouse operations. Hardworking team player.");
   await expect(tip(page, "“hardworking”")).toBeVisible();
   await expect(tip(page, "“team player”")).toBeVisible();
 

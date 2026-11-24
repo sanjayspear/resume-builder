@@ -57,3 +57,6 @@ next-env.d.ts
 # playwright
 /test-results/
 /playwright-report/
+
+# spelling dictionaries, copied in by "postinstall"
+/public/dictionaries/

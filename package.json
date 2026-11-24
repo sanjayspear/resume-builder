@@ -16,7 +16,7 @@
     "test": "esbuild tests/*.test.ts tests/*.test.tsx --bundle --platform=node --format=esm --packages=external --jsx=automatic --alias:@=./src --outdir=.next/tests --out-extension:.js=.mjs --log-level=warning && node --test \".next/tests/*.test.mjs\"",
     "test:e2e": "playwright test",
     "test:e2e:pages": "E2E_TARGET=pages playwright test",
-    "postinstall": "node -e \"require('fs').copyFileSync('node_modules/pdfjs-dist/build/pdf.worker.min.mjs','public/pdf.worker.min.mjs')\""
+    "postinstall": "node scripts/copy-assets.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.8",
@@ -25,7 +25,10 @@
     "@tiptap/pm": "^3.35.0",
     "@tiptap/react": "^3.35.0",
     "@tiptap/starter-kit": "^3.35.0",
+    "dictionary-en": "^4.0.0",
+    "dictionary-en-gb": "^3.0.0",
     "next": "16.4.6",
+    "nspell": "^2.1.5",
     "pdfjs-dist": "^6.5.438",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -36,6 +39,7 @@
     "@playwright/test": "^1.65.1",
     "@tailwindcss/turbopack": "4.3.3",
     "@types/node": "^20",
+    "@types/nspell": "^2.1.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "esbuild": "^0.28.2",

@@ -12,7 +12,10 @@ import type { Check, CheckStatus } from "@/lib/ats/types";
 import { emptyAtsState, findResume, updateAtsState, type AtsState } from "@/lib/library";
 import { commitLibrary, useLibrary } from "@/lib/libraryStore";
 import type { ResumeData } from "@/lib/schema";
-import { contentTips, tipsSummary } from "@/lib/ats/tips";
+import { contentTips, spellingTips, tipsSummary } from "@/lib/ats/tips";
+import type { SpellResult } from "@/lib/spell/checker";
+import { checkSpelling } from "@/lib/spell/client";
+import { spellTargets } from "@/lib/spell/targets";
 import { ContentTips } from "./ContentTips";
 import { JobMatch } from "./JobMatch";
 
@@ -136,8 +139,27 @@ export function AtsPanel({ resumeId, onClose }: { resumeId: string; onClose: () 
     [textJson, keywordResults, ats.jobDescription, ats.targetTitle],
   );
 
+  // Spelling: checked in a background worker against US + UK dictionaries.
+  const targets = useMemo(() => spellTargets(JSON.parse(textJson) as ResumeData), [textJson]);
+  const [spelling, setSpelling] = useState<{ results: Map<string, SpellResult>; error: string | null } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    checkSpelling(targets.map((t) => t.word))
+      .then((results) => !cancelled && setSpelling({ results, error: null }))
+      .catch((e) => {
+        console.error("Spell check failed", e);
+        if (!cancelled) setSpelling((prev) => ({ results: prev?.results ?? new Map(), error: "The spelling dictionary couldn't be loaded." }));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [targets]);
+
   // Content tips (dismissed ones are remembered with the resume).
-  const tips = useMemo(() => contentTips(JSON.parse(textJson) as ResumeData), [textJson]);
+  const tips = useMemo(
+    () => [...(spelling ? spellingTips(targets, spelling.results) : []), ...contentTips(JSON.parse(textJson) as ResumeData)],
+    [textJson, targets, spelling],
+  );
   const visibleTips = tips.filter((t) => !ats.dismissedTips.includes(t.id)).length;
 
   const checking = !reading || reading.json !== json;
@@ -254,6 +276,7 @@ export function AtsPanel({ resumeId, onClose }: { resumeId: string; onClose: () 
         ) : (
           <ContentTips
             tips={tips}
+            spellingStatus={spelling?.error ?? (spelling ? "ready" : "loading")}
             dismissed={ats.dismissedTips}
             onDismiss={(id) => saveAts({ dismissedTips: [...new Set([...ats.dismissedTips, id])] })}
             onRestore={() => saveAts({ dismissedTips: ats.dismissedTips.filter((id) => !tips.some((t) => t.id === id)) })}
